@@ -11,7 +11,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo "Buduję projekt"
-                ls -la
+                sh 'ls -la'
             }
         }
     }
