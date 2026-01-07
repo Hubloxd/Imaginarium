@@ -1,0 +1,14 @@
+django
+django-db
+djangorestframework
+celery
+django_celery_beat
+django-redis
+redis
+django-cors-headers
+pillow
+psycopg2
+gunicorn[standard]
+drf-spectacular
+django-extensions
+django_celery_results
