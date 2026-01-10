@@ -43,4 +43,14 @@ export class MediaService {
   getMediaById(id: string): Observable<Media> {
     return this.http.get<Media>(`${this.apiUrl}/${id}`);
   }
+
+  updateMedia(id: string, file: File): Observable<Media> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.put<Media>(`${this.apiUrl}/${id}`, formData);
+  }
+
+  deleteMedia(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
 }

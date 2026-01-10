@@ -1,5 +1,6 @@
 import { Component, signal, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MediaEditModalComponent } from '../media-edit-modal/media-edit-modal.component';
 
 export interface Tag {
   id: string;
@@ -23,7 +24,7 @@ export interface MediaItem {
 @Component({
   selector: 'app-media-viewer',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MediaEditModalComponent],
   templateUrl: './media-viewer.component.html',
   styleUrl: './media-viewer.component.css'
 })
@@ -31,10 +32,13 @@ export class MediaViewerComponent implements OnInit, OnDestroy {
   @Input() media: MediaItem[] = [];
   @Input() currentIndex: number = 0;
   @Output() close = new EventEmitter<void>();
+  @Output() mediaUpdated = new EventEmitter<void>();
+  @Output() mediaDeleted = new EventEmitter<string>();
 
   currentMedia = signal<MediaItem | null>(null);
   isLoading = signal<boolean>(false);
   error = signal<string | null>(null);
+  showEditModal = signal<boolean>(false);
 
   get mediaCount(): number {
     return this.media.length;
@@ -119,5 +123,29 @@ export class MediaViewerComponent implements OnInit, OnDestroy {
       hour: '2-digit',
       minute: '2-digit'
     });
+  }
+
+  openEditModal(): void {
+    this.showEditModal.set(true);
+  }
+
+  closeEditModal(): void {
+    this.showEditModal.set(false);
+  }
+
+  onMediaUpdated(): void {
+    this.mediaUpdated.emit();
+    this.closeEditModal();
+    // Zamknij viewer, aby zresetować stan i przeładować media
+    this.closeViewer();
+  }
+
+  onMediaDeleted(): void {
+    const currentMedia = this.currentMedia();
+    if (currentMedia) {
+      this.mediaDeleted.emit(currentMedia.id);
+    }
+    this.closeEditModal();
+    this.closeViewer();
   }
 }

@@ -1,7 +1,9 @@
-import { Component, signal, computed, OnInit } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
+import { interval, Subscription } from 'rxjs';
 import { AlbumService, Album, AlbumDetail, Media } from '../../services/album.service';
+import { MediaService } from '../../services/media.service';
 import { AuthService } from '../../services/auth.service';
 import { MediaViewerComponent, MediaItem } from '../media-viewer/media-viewer.component';
 import { ContextMenuComponent, ContextMenuItem } from '../context-menu/context-menu.component';
@@ -19,7 +21,7 @@ interface MediaGroup {
   templateUrl: './album-detail.component.html',
   styleUrl: './album-detail.component.css'
 })
-export class AlbumDetailComponent implements OnInit {
+export class AlbumDetailComponent implements OnInit, OnDestroy {
   album = signal<AlbumDetail | null>(null);
   medias = signal<Media[]>([]);
   isLoading = signal<boolean>(false);
@@ -30,6 +32,10 @@ export class AlbumDetailComponent implements OnInit {
   viewerIndex = signal<number>(0);
   isDragging = signal<boolean>(false);
   isUploading = signal<boolean>(false);
+
+  // Thumbnail retry tracking
+  private thumbnailRetryMap = new Map<string, number>(); // mediaId -> retry count
+  private thumbnailRetrySubscription?: Subscription;
 
   // Context menu
   contextMenuVisible = signal<boolean>(false);
@@ -80,6 +86,7 @@ export class AlbumDetailComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private albumService: AlbumService,
+    private mediaService: MediaService,
     public authService: AuthService
   ) {}
 
@@ -91,6 +98,17 @@ export class AlbumDetailComponent implements OnInit {
         this.loadAlbum(id);
       }
     });
+
+    // Uruchom polling dla miniaturek co 3 sekundy
+    this.thumbnailRetrySubscription = interval(3000).subscribe(() => {
+      this.retryThumbnails();
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.thumbnailRetrySubscription) {
+      this.thumbnailRetrySubscription.unsubscribe();
+    }
   }
 
   loadAlbum(id: string): void {
@@ -247,10 +265,36 @@ export class AlbumDetailComponent implements OnInit {
         label: 'Udostępnij',
         icon: 'M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z',
         action: () => this.openShareModal(media.id, undefined)
+      },
+      {
+        label: 'Usuń',
+        icon: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',
+        action: () => this.deleteMedia(media.id)
       }
     ]);
     
     this.contextMenuVisible.set(true);
+  }
+
+  deleteMedia(mediaId: string): void {
+    if (!confirm('Czy na pewno chcesz usunąć to zdjęcie? Ta operacja jest nieodwracalna.')) {
+      return;
+    }
+
+    this.mediaService.deleteMedia(mediaId).subscribe({
+      next: () => {
+        // Przeładuj album po usunięciu
+        const albumId = this.albumId();
+        if (albumId) {
+          this.loadAlbum(albumId);
+        }
+        this.closeContextMenu();
+      },
+      error: (error) => {
+        console.error('Błąd podczas usuwania media:', error);
+        alert('Nie udało się usunąć zdjęcia.');
+      }
+    });
   }
 
   onAlbumContextMenu(event: MouseEvent): void {
@@ -293,5 +337,73 @@ export class AlbumDetailComponent implements OnInit {
   onShared(): void {
     // Można dodać powiadomienie o udostępnieniu
     this.closeShareModal();
+  }
+
+  onMediaUpdated(): void {
+    // Przeładuj album po aktualizacji
+    const albumId = this.albumId();
+    if (albumId) {
+      this.loadAlbum(albumId);
+    }
+  }
+
+  onMediaDeleted(mediaId: string): void {
+    // Przeładuj album po usunięciu
+    const albumId = this.albumId();
+    if (albumId) {
+      this.loadAlbum(albumId);
+    }
+    // Usuń z mapy retry
+    this.thumbnailRetryMap.delete(mediaId);
+  }
+
+  onThumbnailLoadError(mediaId: string, event: Event): void {
+    const img = event.target as HTMLImageElement;
+    const retryCount = this.thumbnailRetryMap.get(mediaId) || 0;
+    
+    // Próbuj maksymalnie 20 razy (60 sekund)
+    if (retryCount < 20) {
+      this.thumbnailRetryMap.set(mediaId, retryCount + 1);
+      
+      // Spróbuj ponownie załadować z cache-busting
+      setTimeout(() => {
+        const media = this.medias().find(m => m.id === mediaId);
+        if (media && media.thumbnailUrl) {
+          // Dodaj timestamp do URL dla cache-busting
+          const separator = media.thumbnailUrl.includes('?') ? '&' : '?';
+          img.src = `${media.thumbnailUrl}${separator}v=${Date.now()}`;
+        }
+      }, 100);
+    } else {
+      // Po 20 próbach, pokaż placeholder
+      img.style.display = 'none';
+      const fallback = img.nextElementSibling as HTMLElement;
+      if (fallback) {
+        fallback.classList.remove('hidden');
+      }
+      this.thumbnailRetryMap.delete(mediaId);
+    }
+  }
+
+  onThumbnailLoadSuccess(mediaId: string): void {
+    // Usuń z mapy retry po udanym załadowaniu
+    this.thumbnailRetryMap.delete(mediaId);
+  }
+
+  private retryThumbnails(): void {
+    // Dla mediów bez miniaturek, które są świeżo dodane, spróbuj przeładować album
+    const mediasWithoutThumbnails = this.medias().filter(m => 
+      !m.thumbnailUrl && 
+      this.thumbnailRetryMap.get(m.id) === undefined &&
+      new Date(m.uploadedAt).getTime() > Date.now() - 60000 // Tylko media z ostatniej minuty
+    );
+
+    if (mediasWithoutThumbnails.length > 0) {
+      // Przeładuj album, aby sprawdzić czy miniaturki są już dostępne
+      const albumId = this.albumId();
+      if (albumId) {
+        this.loadAlbum(albumId);
+      }
+    }
   }
 }
