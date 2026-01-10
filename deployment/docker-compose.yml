@@ -12,6 +12,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
     env_file:
       - env/imaginarium.env
+    volumes:
+      - media-storage:/app/Storage
 
   imaginarium-front:
     container_name: imaginarium-front
@@ -50,12 +52,16 @@ services:
     image: nginx:1.25
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "4444:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - media-storage:/usr/share/nginx/html/media:ro
     depends_on:
       - imaginarium-backend
       - imaginarium-front
       - postgres
       - redis
+
+volumes:
+  media-storage:
 

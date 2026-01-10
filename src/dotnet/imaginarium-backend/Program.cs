@@ -64,9 +64,14 @@ builder.Services.AddAuthorization();
 
 // Register repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAlbumRepository, AlbumRepository>();
+builder.Services.AddScoped<IMediaRepository, MediaRepository>();
 
 // Register services
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IStorageService, StorageService>();
+builder.Services.AddScoped<IMediaService, MediaService>();
+builder.Services.AddScoped<IAlbumService, AlbumService>();
 
 // Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -117,11 +122,19 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Ensure database is created
+// Apply migrations on startup
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.EnsureCreated();
+    try
+    {
+        dbContext.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Błąd podczas aplikowania migracji");
+    }
 }
 
 app.Run();
