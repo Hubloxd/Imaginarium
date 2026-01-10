@@ -144,7 +144,8 @@ export class AlbumDetailComponent implements OnInit {
       mediaType: m.mediaType,
       mimeType: m.mimeType,
       fileName: m.fileName,
-      uploadedAt: m.uploadedAt
+      uploadedAt: m.uploadedAt,
+      tags: m.tags
     }));
 
     const index = allMedias.findIndex(m => m.id === media.id);

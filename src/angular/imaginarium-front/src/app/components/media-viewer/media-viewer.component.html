@@ -74,6 +74,25 @@
     }
   </div>
 
+  <!-- Tags (left top corner) -->
+  @if (currentMedia(); as media) {
+    @if (media.tags && media.tags.length > 0) {
+      <div class="absolute top-4 left-4 z-10 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 max-w-xs">
+        <h4 class="text-white text-xs font-semibold mb-2 uppercase tracking-wide">Klasyfikacja</h4>
+        <div class="flex flex-wrap gap-2">
+          @for (tag of media.tags; track tag.id) {
+            <div class="inline-flex items-center gap-1 bg-blue-600/80 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded">
+              <span>{{ tag.name }}</span>
+              @if (tag.confidence) {
+                <span class="text-blue-200 text-[10px]">({{ (tag.confidence * 100).toFixed(0) }}%)</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+
   <!-- Media info -->
   @if (currentMedia(); as media) {
     <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-black/70 backdrop-blur-sm rounded-lg px-4 py-2 text-white text-sm">
