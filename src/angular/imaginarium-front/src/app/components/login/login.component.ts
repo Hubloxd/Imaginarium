@@ -44,10 +44,8 @@ export class LoginComponent {
       },
       error: (error) => {
         this.isLoading.set(false);
-        if (error.error?.email || error.error?.password) {
-          this.errorMessage.set('Nieprawidłowy email lub hasło.');
-        } else if (error.error?.detail) {
-          this.errorMessage.set(error.error.detail);
+        if (error.error?.message) {
+          this.errorMessage.set(error.error.message);
         } else {
           this.errorMessage.set('Wystąpił błąd podczas logowania. Spróbuj ponownie.');
         }

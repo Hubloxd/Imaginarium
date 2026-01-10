@@ -6,10 +6,12 @@ export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  if (authService.isAuthenticated() && authService.getAccessToken()) {
+  // Użyj metody checkAuth, która upewni się, że sesja jest wczytana
+  if (authService.checkAuth()) {
     return true;
   }
 
+  // Jeśli użytkownik nie jest zalogowany, przekieruj do logowania
   router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
   return false;
 };
@@ -18,7 +20,8 @@ export const loginGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  if (authService.isAuthenticated() && authService.getAccessToken()) {
+  // Jeśli użytkownik jest już zalogowany, przekieruj do strony głównej
+  if (authService.checkAuth()) {
     router.navigate(['/']);
     return false;
   }

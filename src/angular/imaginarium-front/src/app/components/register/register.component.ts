@@ -23,10 +23,8 @@ export class RegisterComponent {
   ) {
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      username: ['', [Validators.required, Validators.minLength(3)]],
-      first_name: [''],
-      last_name: [''],
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
       password_confirm: ['', [Validators.required]]
     }, {
       validators: this.passwordMatchValidator
@@ -55,7 +53,11 @@ export class RegisterComponent {
 
     const formValue = this.registerForm.value;
 
-    this.authService.register(formValue).subscribe({
+    this.authService.register({
+      email: formValue.email,
+      username: formValue.username,
+      password: formValue.password
+    }).subscribe({
       next: () => {
         this.router.navigate(['/']);
       },
@@ -63,14 +65,8 @@ export class RegisterComponent {
         this.isLoading.set(false);
         if (error.error) {
           const errorObj = error.error;
-          if (errorObj.email) {
-            this.errorMessage.set(`Email: ${Array.isArray(errorObj.email) ? errorObj.email[0] : errorObj.email}`);
-          } else if (errorObj.username) {
-            this.errorMessage.set(`Nazwa użytkownika: ${Array.isArray(errorObj.username) ? errorObj.username[0] : errorObj.username}`);
-          } else if (errorObj.password) {
-            this.errorMessage.set(`Hasło: ${Array.isArray(errorObj.password) ? errorObj.password[0] : errorObj.password}`);
-          } else if (errorObj.detail) {
-            this.errorMessage.set(errorObj.detail);
+          if (errorObj.message) {
+            this.errorMessage.set(errorObj.message);
           } else {
             this.errorMessage.set('Wystąpił błąd podczas rejestracji. Spróbuj ponownie.');
           }
