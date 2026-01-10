@@ -24,6 +24,8 @@ public class AlbumController : ControllerBase
     }
 
     [HttpPost]
+    [RequestSizeLimit(4294967296)] // 4GB
+    [RequestFormLimits(MultipartBodyLengthLimit = 4294967296)] // 4GB
     public async Task<ActionResult<AlbumResponseDto>> CreateAlbum([FromForm] CreateAlbumDto createDto, [FromForm] List<IFormFile> files)
     {
         try
@@ -106,6 +108,8 @@ public class AlbumController : ControllerBase
     }
 
     [HttpPost("{albumId}/media")]
+    [RequestSizeLimit(4294967296)] // 4GB
+    [RequestFormLimits(MultipartBodyLengthLimit = 4294967296)] // 4GB
     public async Task<ActionResult<AlbumDetailResponseDto>> AddFilesToAlbum(Guid albumId, [FromForm] List<IFormFile> files)
     {
         try

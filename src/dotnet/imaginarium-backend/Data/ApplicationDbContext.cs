@@ -14,6 +14,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Album> Albums { get; set; }
     public DbSet<Media> Media { get; set; }
     public DbSet<AlbumMedia> AlbumMedia { get; set; }
+    public DbSet<Group> Groups { get; set; }
+    public DbSet<GroupMember> GroupMembers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -49,6 +51,40 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(e => new { e.AlbumId, e.MediaId }).IsUnique();
             entity.HasIndex(e => e.AlbumId);
             entity.HasIndex(e => e.MediaId);
+        });
+
+        // Group configuration
+        modelBuilder.Entity<Group>(entity =>
+        {
+            entity.HasIndex(e => e.CreatedByUserId);
+            entity.HasOne(e => e.CreatedByUser)
+                  .WithMany()
+                  .HasForeignKey(e => e.CreatedByUserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // GroupMember configuration
+        modelBuilder.Entity<GroupMember>(entity =>
+        {
+            entity.HasIndex(e => new { e.GroupId, e.UserId }).IsUnique();
+            entity.HasIndex(e => e.GroupId);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.InvitedByUserId);
+            
+            entity.HasOne(e => e.Group)
+                  .WithMany(g => g.GroupMembers)
+                  .HasForeignKey(e => e.GroupId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(e => e.InvitedByUser)
+                  .WithMany()
+                  .HasForeignKey(e => e.InvitedByUserId)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }
