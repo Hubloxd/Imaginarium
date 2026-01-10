@@ -1,33 +1,236 @@
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-  <div class="container mx-auto px-4 py-8">
-    <div class="bg-white rounded-2xl shadow-xl p-8">
-      <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Witaj w Imaginarium!</h1>
+<div class="min-h-screen bg-gray-950 text-gray-100 flex">
+  <!-- Sidebar -->
+  <aside 
+    [class.w-64]="isSidebarOpen()"
+    [class.w-0]="!isSidebarOpen()"
+    class="bg-gray-900 border-r border-gray-800 transition-all duration-300 overflow-hidden flex flex-col"
+  >
+    <!-- Logo/Header -->
+    <div class="p-6 border-b border-gray-800">
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl font-bold text-white">Imaginarium</h1>
         <button
-          (click)="logout()"
-          class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          (click)="toggleSidebar()"
+          class="text-gray-400 hover:text-white transition-colors"
+          aria-label="Toggle sidebar"
         >
-          Wyloguj się
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
         </button>
       </div>
-
-      <div class="space-y-4">
-        <div class="bg-gray-50 rounded-lg p-6">
-          <h2 class="text-xl font-semibold text-gray-800 mb-4">Twój profil</h2>
-          @if (authService.currentUser(); as user) {
-            <div class="space-y-2">
-              <p class="text-gray-700"><span class="font-medium">Email:</span> {{ user.email }}</p>
-              <p class="text-gray-700"><span class="font-medium">Nazwa użytkownika:</span> {{ user.username }}</p>
-              @if (user.first_name || user.last_name) {
-                <p class="text-gray-700">
-                  <span class="font-medium">Imię i nazwisko:</span> 
-                  {{ user.first_name }} {{ user.last_name }}
-                </p>
-              }
-            </div>
-          }
-        </div>
-      </div>
     </div>
-  </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 p-4 space-y-2">
+      <button
+        (click)="setActiveTab('photos')"
+        [class.bg-gray-800]="activeTab() === 'photos'"
+        [class.text-white]="activeTab() === 'photos'"
+        [class.text-gray-400]="activeTab() !== 'photos'"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition-colors text-left"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <span class="font-medium">Zdjęcia</span>
+      </button>
+
+      <button
+        (click)="setActiveTab('albums')"
+        [class.bg-gray-800]="activeTab() === 'albums'"
+        [class.text-white]="activeTab() === 'albums'"
+        [class.text-gray-400]="activeTab() !== 'albums'"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition-colors text-left"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+        </svg>
+        <span class="font-medium">Albumy</span>
+      </button>
+    </nav>
+
+    <!-- User section -->
+    <div class="p-4 border-t border-gray-800">
+      @if (authService.currentUser(); as user) {
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm font-medium text-white">
+            {{ user.username.charAt(0).toUpperCase() }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-white truncate">{{ user.username }}</p>
+            <p class="text-xs text-gray-400 truncate">{{ user.email }}</p>
+          </div>
+        </div>
+      }
+      <button
+        (click)="logout()"
+        class="w-full px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors text-left"
+      >
+        Wyloguj się
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+    <!-- Top bar -->
+    <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        @if (!isSidebarOpen()) {
+          <button
+            (click)="toggleSidebar()"
+            class="text-gray-400 hover:text-white transition-colors"
+            aria-label="Open sidebar"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+        }
+        <h2 class="text-lg font-semibold text-white">
+          @if (activeTab() === 'photos') {
+            Zdjęcia
+          } @else if (activeTab() === 'albums') {
+            Albumy
+          }
+        </h2>
+      </div>
+    </header>
+
+    <!-- Content area -->
+    <div class="flex-1 overflow-y-auto bg-gray-950">
+      @if (activeTab() === 'photos') {
+        <!-- Photos grid placeholder -->
+        <div class="p-6">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            @for (item of [1,2,3,4,5,6,7,8,9,10,11,12]; track item) {
+              <div class="aspect-square bg-gray-800 rounded-lg overflow-hidden hover:opacity-80 transition-opacity cursor-pointer">
+                <div class="w-full h-full flex items-center justify-center text-gray-500">
+                  <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      } @else if (activeTab() === 'albums') {
+        <!-- Albums view -->
+        <div class="flex flex-col h-full">
+          <!-- Search bar and create button -->
+          <div class="px-6 py-4 border-b border-gray-800 bg-gray-900">
+            <div class="flex items-center gap-4">
+              <!-- Search input -->
+              <div class="flex-1 relative">
+                <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <input
+                  type="text"
+                  [value]="albumSearchQuery()"
+                  (input)="onSearchChange($event)"
+                  placeholder="Wyszukaj albumy..."
+                  class="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              <!-- Create album button -->
+              <button
+                (click)="createAlbum()"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                <span>Nowy album</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Albums list -->
+          <div class="flex-1 overflow-y-auto p-6">
+            @if (isLoadingAlbums()) {
+              <div class="text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p class="text-gray-400 mt-4">Ładowanie albumów...</p>
+              </div>
+            } @else if (albumsError()) {
+              <div class="text-center py-12">
+                <svg class="w-16 h-16 mx-auto text-red-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="text-red-400 text-lg mb-2">{{ albumsError() }}</p>
+                <button
+                  (click)="loadAlbums()"
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  Spróbuj ponownie
+                </button>
+              </div>
+            } @else if (groupedAlbums().length === 0) {
+              <div class="text-center py-12">
+                <svg class="w-16 h-16 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+                <p class="text-gray-400 text-lg">
+                  @if (albumSearchQuery()) {
+                    Nie znaleziono albumów pasujących do wyszukiwania
+                  } @else {
+                    Brak albumów. Utwórz swój pierwszy album!
+                  }
+                </p>
+              </div>
+            } @else {
+              <div class="space-y-8">
+                @for (group of groupedAlbums(); track group.year) {
+                  <div>
+                    <!-- Year header -->
+                    <h3 class="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wide">
+                      {{ group.year }}
+                    </h3>
+                    
+                    <!-- Albums in this year -->
+                    <div class="space-y-2">
+                      @for (album of group.albums; track album.id) {
+                        <div 
+                          (click)="openAlbum(album.id)"
+                          class="bg-gray-900 border border-gray-800 rounded-lg p-4 hover:bg-gray-800 transition-colors cursor-pointer"
+                        >
+                          <div class="flex items-center gap-4">
+                            <!-- Album icon (no thumbnail for now) -->
+                            <div class="w-20 h-20 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                              </svg>
+                            </div>
+                            
+                            <!-- Album info -->
+                            <div class="flex-1 min-w-0">
+                              <h4 class="text-white font-medium text-lg mb-1 truncate">{{ album.name }}</h4>
+                              <p class="text-gray-400 text-sm">
+                                {{ album.mediaCount }} {{ album.mediaCount === 1 ? 'zdjęcie' : album.mediaCount < 5 ? 'zdjęcia' : 'zdjęć' }}
+                              </p>
+                              <p class="text-gray-500 text-xs mt-1">
+                                {{ formatDate(album.createdAt) }}
+                              </p>
+                            </div>
+                            
+                            <!-- Arrow icon -->
+                            <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </main>
 </div>
