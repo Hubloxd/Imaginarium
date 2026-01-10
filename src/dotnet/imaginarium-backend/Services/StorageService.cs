@@ -93,14 +93,23 @@ public class StorageService : IStorageService
         return filePath;
     }
 
-    public string GetThumbnailUrl(string? thumbnailPath)
+    public string GetThumbnailUrl(string? thumbnailPath, DateTime? updatedAt = null)
     {
         if (string.IsNullOrEmpty(thumbnailPath))
             return string.Empty;
 
         // Jeśli ścieżka już zaczyna się od /thumbnails/, zwróć ją bez zmian
         if (thumbnailPath.StartsWith("/thumbnails/"))
-            return thumbnailPath;
+        {
+            var url = thumbnailPath;
+            // Dodaj cache-busting query parameter jeśli podano updatedAt
+            if (updatedAt.HasValue)
+            {
+                var timestamp = updatedAt.Value.Ticks;
+                url = $"{url}?v={timestamp}";
+            }
+            return url;
+        }
 
         // Wyciągnij tylko nazwę pliku (guid.jpg lub guid_xxx.jpg)
         var fileName = Path.GetFileName(thumbnailPath);
@@ -115,6 +124,15 @@ public class StorageService : IStorageService
             fileName = $"{guidPart}{extension}";
         }
         
-        return $"/thumbnails/{fileName}";
+        var thumbnailUrl = $"/thumbnails/{fileName}";
+        
+        // Dodaj cache-busting query parameter jeśli podano updatedAt
+        if (updatedAt.HasValue)
+        {
+            var timestamp = updatedAt.Value.Ticks;
+            thumbnailUrl = $"{thumbnailUrl}?v={timestamp}";
+        }
+        
+        return thumbnailUrl;
     }
 }

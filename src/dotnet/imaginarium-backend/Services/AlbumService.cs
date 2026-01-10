@@ -366,7 +366,7 @@ public class AlbumService : IAlbumService
             CreatedAt = album.CreatedAt,
             UpdatedAt = album.UpdatedAt,
             CoverMediaId = album.CoverMediaId,
-            CoverThumbnailUrl = _storageService.GetThumbnailUrl(album.CoverMedia?.ThumbnailPath),
+            CoverThumbnailUrl = _storageService.GetThumbnailUrl(album.CoverMedia?.ThumbnailPath, album.CoverMedia?.UpdatedAt),
             MediaCount = album.AlbumMedias?.Count ?? 0
         };
     }
@@ -412,7 +412,7 @@ public class AlbumService : IAlbumService
                     Height = media.Height,
                     Duration = media.Duration,
                     ThumbnailPath = media.ThumbnailPath,
-                    ThumbnailUrl = _storageService.GetThumbnailUrl(media.ThumbnailPath),
+                    ThumbnailUrl = _storageService.GetThumbnailUrl(media.ThumbnailPath, media.UpdatedAt),
                     Tags = tags
                 });
             }
@@ -426,7 +426,7 @@ public class AlbumService : IAlbumService
             CreatedAt = album.CreatedAt,
             UpdatedAt = album.UpdatedAt,
             CoverMediaId = album.CoverMediaId,
-            CoverThumbnailUrl = _storageService.GetThumbnailUrl(album.CoverMedia?.ThumbnailPath),
+            CoverThumbnailUrl = _storageService.GetThumbnailUrl(album.CoverMedia?.ThumbnailPath, album.CoverMedia?.UpdatedAt),
             MediaCount = album.AlbumMedias?.Count ?? 0,
             Media = mediaList
         };

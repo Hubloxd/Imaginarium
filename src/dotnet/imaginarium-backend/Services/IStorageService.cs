@@ -6,5 +6,5 @@ public interface IStorageService
     Task<bool> DeleteFileAsync(string filePath);
     Task<Stream?> GetFileAsync(string filePath);
     string GetMediaUrl(string filePath);
-    string GetThumbnailUrl(string? thumbnailPath);
+    string GetThumbnailUrl(string? thumbnailPath, DateTime? updatedAt = null);
 }

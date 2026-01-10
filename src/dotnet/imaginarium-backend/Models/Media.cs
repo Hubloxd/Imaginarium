@@ -33,6 +33,9 @@ public class Media
     [Required]
     public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
 
+    [Required]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
     public int? Width { get; set; }
 
     public int? Height { get; set; }

@@ -55,6 +55,7 @@ public class MediaService : IMediaService
         var filePath = await _storageService.SaveFileAsync(fileStream, file.FileName, userId);
 
         // Utwórz encję Media (thumbnail będzie wygenerowany asynchronicznie)
+        var now = DateTime.UtcNow;
         var media = new Media
         {
             UserId = userId,
@@ -63,7 +64,8 @@ public class MediaService : IMediaService
             FileSize = file.Length,
             MediaType = mediaType,
             MimeType = file.ContentType,
-            UploadedAt = DateTime.UtcNow,
+            UploadedAt = now,
+            UpdatedAt = now,
             ThumbnailPath = null // Będzie ustawione po wygenerowaniu miniatury
         };
 
@@ -291,6 +293,59 @@ public class MediaService : IMediaService
             .ToListAsync();
     }
 
+    public async Task<MediaResponseDto?> UpdateMediaAsync(Guid id, Guid userId, IFormFile file)
+    {
+        var media = await _mediaRepository.GetByIdAsync(id);
+        if (media == null || media.UserId != userId)
+            return null;
+
+        // Usuń stare tagi (MediaTag) przed aktualizacją
+        var existingMediaTags = await _mediaTagRepository.GetByMediaIdAsync(id);
+        foreach (var mediaTag in existingMediaTags)
+        {
+            await _mediaTagRepository.DeleteAsync(mediaTag.Id);
+        }
+
+        // Usuń stary plik z dysku
+        await _storageService.DeleteFileAsync(media.FilePath);
+        if (!string.IsNullOrEmpty(media.ThumbnailPath))
+        {
+            await _storageService.DeleteFileAsync(media.ThumbnailPath);
+        }
+
+        // Określ typ media
+        var mediaType = file.ContentType.StartsWith("image/") 
+            ? MediaTypeEnum.Image 
+            : MediaTypeEnum.Video;
+
+        // Zapisz nowy plik
+        using var fileStream = file.OpenReadStream();
+        var filePath = await _storageService.SaveFileAsync(fileStream, file.FileName, userId);
+
+        // Zaktualizuj encję Media
+        media.FileName = file.FileName;
+        media.FilePath = filePath;
+        media.FileSize = file.Length;
+        media.MediaType = mediaType;
+        media.MimeType = file.ContentType;
+        media.ThumbnailPath = null; // Będzie wygenerowany asynchronicznie
+        media.UploadedAt = DateTime.UtcNow; // Aktualizuj datę uploadu
+        media.UpdatedAt = DateTime.UtcNow; // Aktualizuj datę modyfikacji
+
+        media = await _mediaRepository.UpdateAsync(media);
+
+        // Dodaj zadanie generowania miniatury do kolejki
+        await _thumbnailQueueService.EnqueueThumbnailTaskAsync(media.Id, filePath, file.ContentType, mediaType);
+
+        // Dodaj zadanie klasyfikacji do kolejki (tylko dla obrazów)
+        if (mediaType == MediaTypeEnum.Image)
+        {
+            await _classificationQueueService.EnqueueClassificationTaskAsync(media.Id, filePath);
+        }
+
+        return await MapToDtoAsync(media);
+    }
+
     public async Task<bool> DeleteMediaAsync(Guid id, Guid userId)
     {
         var media = await _mediaRepository.GetByIdAsync(id);
@@ -334,7 +389,7 @@ public class MediaService : IMediaService
             Height = media.Height,
             Duration = media.Duration,
             ThumbnailPath = media.ThumbnailPath,
-            ThumbnailUrl = _storageService.GetThumbnailUrl(media.ThumbnailPath),
+            ThumbnailUrl = _storageService.GetThumbnailUrl(media.ThumbnailPath, media.UpdatedAt),
             Tags = tags
         };
     }
@@ -356,7 +411,7 @@ public class MediaService : IMediaService
             Height = media.Height,
             Duration = media.Duration,
             ThumbnailPath = media.ThumbnailPath,
-            ThumbnailUrl = _storageService.GetThumbnailUrl(media.ThumbnailPath),
+            ThumbnailUrl = _storageService.GetThumbnailUrl(media.ThumbnailPath, media.UpdatedAt),
             Tags = new List<DTOs.TagDto>() // Empty for now, will be populated in async methods
         };
     }

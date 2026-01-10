@@ -91,6 +91,7 @@ public class ThumbnailProcessorService : BackgroundService
             if (media != null)
             {
                 media.ThumbnailPath = thumbnailPath;
+                media.UpdatedAt = DateTime.UtcNow; // Aktualizuj datę modyfikacji dla cache-busting
                 await mediaRepository.UpdateAsync(media);
 
                 // Zaktualizuj cover albumu jeśli to ostatnie dodane media
