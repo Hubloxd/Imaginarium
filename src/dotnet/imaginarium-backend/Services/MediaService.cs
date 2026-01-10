@@ -346,6 +346,81 @@ public class MediaService : IMediaService
         return await MapToDtoAsync(media);
     }
 
+    public async Task<List<MediaResponseDto>> SearchMediaAsync(Guid userId, string? query = null, string? tag = null, DateTime? date = null, Guid? albumId = null)
+    {
+        // Najpierw pobierz wszystkie dostępne media dla użytkownika (używając istniejącej logiki)
+        var allMedia = await GetUserMediaAsync(userId);
+        var mediaIds = allMedia.Select(m => m.Id).ToList();
+
+        if (!mediaIds.Any())
+            return new List<MediaResponseDto>();
+
+        // Filtruj po albumie (jeśli podano)
+        if (albumId.HasValue)
+        {
+            var albumMedia = await _mediaRepository.GetByAlbumIdAsync(albumId.Value);
+            var albumMediaIds = new HashSet<Guid>(albumMedia.Select(m => m.Id));
+            allMedia = allMedia.Where(m => albumMediaIds.Contains(m.Id)).ToList();
+        }
+
+        // Filtruj po dacie (jeśli podano)
+        if (date.HasValue)
+        {
+            // Upewnij się, że data jest traktowana jako UTC i użyj tylko części daty
+            var searchDate = date.Value;
+            if (searchDate.Kind == DateTimeKind.Unspecified)
+            {
+                // Jeśli data nie ma timezone, załóż że jest to UTC
+                searchDate = DateTime.SpecifyKind(searchDate, DateTimeKind.Utc);
+            }
+            else if (searchDate.Kind == DateTimeKind.Local)
+            {
+                // Jeśli data jest lokalna, przekonwertuj na UTC
+                searchDate = searchDate.ToUniversalTime();
+            }
+            
+            // Użyj tylko części daty (bez czasu) w UTC
+            var dateStart = new DateTime(searchDate.Year, searchDate.Month, searchDate.Day, 0, 0, 0, DateTimeKind.Utc);
+            var dateEnd = dateStart.AddDays(1);
+            
+            allMedia = allMedia.Where(m => 
+            {
+                // Upewnij się, że UploadedAt jest traktowane jako UTC i użyj tylko części daty
+                var uploadedDate = m.UploadedAt.Kind == DateTimeKind.Utc 
+                    ? m.UploadedAt 
+                    : m.UploadedAt.ToUniversalTime();
+                var uploadedDateOnly = new DateTime(uploadedDate.Year, uploadedDate.Month, uploadedDate.Day, 0, 0, 0, DateTimeKind.Utc);
+                return uploadedDateOnly >= dateStart && uploadedDateOnly < dateEnd;
+            }).ToList();
+        }
+
+        // Filtruj po tagu (jeśli podano)
+        if (!string.IsNullOrWhiteSpace(tag))
+        {
+            var tagLower = tag.ToLowerInvariant();
+            var mediaWithTag = await _context.MediaTags
+                .Include(mt => mt.Tag)
+                .Where(mt => mt.Tag != null && mt.Tag.Name.ToLower().Contains(tagLower))
+                .Select(mt => mt.MediaId)
+                .Distinct()
+                .ToListAsync();
+
+            allMedia = allMedia.Where(m => mediaWithTag.Contains(m.Id)).ToList();
+        }
+
+        // Filtruj po query (nazwa pliku, metadane)
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            var queryLower = query.ToLowerInvariant();
+            allMedia = allMedia.Where(m => 
+                m.FileName.ToLower().Contains(queryLower) ||
+                (m.Tags != null && m.Tags.Any(t => t.Name.ToLower().Contains(queryLower)))
+            ).ToList();
+        }
+
+        return allMedia;
+    }
+
     public async Task<bool> DeleteMediaAsync(Guid id, Guid userId)
     {
         var media = await _mediaRepository.GetByIdAsync(id);

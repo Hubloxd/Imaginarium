@@ -41,6 +41,25 @@ public class MediaController : ControllerBase
         }
     }
 
+    [HttpGet("search")]
+    public async Task<ActionResult<List<MediaResponseDto>>> SearchMedia([FromQuery] string? query = null, [FromQuery] string? tag = null, [FromQuery] DateTime? date = null, [FromQuery] Guid? albumId = null)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized();
+
+            var media = await _mediaService.SearchMediaAsync(userId.Value, query, tag, date, albumId);
+            return Ok(media);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas wyszukiwania mediów");
+            return StatusCode(500, new { message = "Wystąpił błąd podczas wyszukiwania mediów." });
+        }
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<MediaResponseDto>> GetMedia(Guid id)
     {
