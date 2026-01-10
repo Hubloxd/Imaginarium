@@ -13,7 +13,10 @@
           </svg>
         </button>
         @if (album(); as albumData) {
-          <h1 class="text-xl font-semibold text-white">{{ albumData.name }}</h1>
+          <h1 
+            class="text-xl font-semibold text-white cursor-pointer"
+            (contextmenu)="onAlbumContextMenu($event)"
+          >{{ albumData.name }}</h1>
           <span class="text-sm text-gray-400">({{ albumData.mediaCount }} {{ albumData.mediaCount === 1 ? 'zdjęcie' : albumData.mediaCount < 5 ? 'zdjęcia' : 'zdjęć' }})</span>
         } @else if (isLoading()) {
           <div class="h-6 w-48 bg-gray-800 rounded animate-pulse"></div>
@@ -113,6 +116,7 @@
               @for (media of group.medias; track media.id) {
                 <div 
                   (click)="openMediaViewer(media, medias())"
+                  (contextmenu)="onMediaContextMenu($event, media)"
                   class="relative group aspect-square bg-gray-800 rounded-lg overflow-hidden hover:opacity-90 transition-opacity cursor-pointer"
                 >
                   @if (media.mediaType === 'Image') {
@@ -177,4 +181,22 @@
       (close)="closeViewer()"
     ></app-media-viewer>
   }
+
+  <!-- Context Menu -->
+  <app-context-menu
+    [items]="contextMenuItems()"
+    [x]="contextMenuX()"
+    [y]="contextMenuY()"
+    [visible]="contextMenuVisible()"
+    (close)="closeContextMenu()"
+  ></app-context-menu>
+
+  <!-- Share Modal -->
+  <app-share-modal
+    [mediaId]="shareMediaId()"
+    [albumId]="shareAlbumId()"
+    [visible]="showShareModal()"
+    (close)="closeShareModal()"
+    (shared)="onShared()"
+  ></app-share-modal>
 </div>
