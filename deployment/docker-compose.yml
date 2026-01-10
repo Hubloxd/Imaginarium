@@ -9,6 +9,8 @@ services:
       - redis
     env_file:
       - env/imaginarium.env
+    ports:
+      - "8000:8000"
 
   imaginarium-front:
     container_name: imaginarium-front
