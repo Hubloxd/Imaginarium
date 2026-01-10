@@ -1,6 +1,14 @@
 import { Component, signal, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
+export interface Tag {
+  id: string;
+  name: string;
+  category?: string;
+  confidence: number;
+  source?: string;
+}
+
 export interface MediaItem {
   id: string;
   mediaUrl: string;
@@ -9,6 +17,7 @@ export interface MediaItem {
   mimeType: string;
   fileName: string;
   uploadedAt: string;
+  tags?: Tag[];
 }
 
 @Component({

@@ -282,7 +282,8 @@ export class HomeComponent implements OnInit {
       fileName: m.fileName,
       mediaType: m.mediaType,
       mimeType: m.mimeType,
-      uploadedAt: m.uploadedAt
+      uploadedAt: m.uploadedAt,
+      tags: m.tags
     }));
 
     const index = mediaItems.findIndex(m => m.id === media.id);

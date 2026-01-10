@@ -3,6 +3,14 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environment/environment';
 
+export interface Tag {
+  id: string;
+  name: string;
+  category?: string;
+  confidence: number;
+  source?: string;
+}
+
 export interface Media {
   id: string;
   fileName: string;
@@ -17,6 +25,7 @@ export interface Media {
   duration?: number;
   thumbnailPath?: string;
   thumbnailUrl?: string;
+  tags?: Tag[];
 }
 
 @Injectable({
