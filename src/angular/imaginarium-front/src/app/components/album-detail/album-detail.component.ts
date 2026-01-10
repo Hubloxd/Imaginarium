@@ -32,6 +32,9 @@ export class AlbumDetailComponent implements OnInit, OnDestroy {
   viewerIndex = signal<number>(0);
   isDragging = signal<boolean>(false);
   isUploading = signal<boolean>(false);
+  mediaSearchQuery = signal<string>('');
+  mediaSearchTag = signal<string>('');
+  mediaSearchDate = signal<string>('');
 
   // Thumbnail retry tracking
   private thumbnailRetryMap = new Map<string, number>(); // mediaId -> retry count
@@ -118,7 +121,55 @@ export class AlbumDetailComponent implements OnInit, OnDestroy {
     this.albumService.getAlbumById(id).subscribe({
       next: (album) => {
         this.album.set(album);
-        this.medias.set(album.media || []);
+        // Filtruj media lokalnie jeśli są kryteria wyszukiwania
+        let filteredMedias = album.media || [];
+        
+        if (this.mediaSearchQuery().trim()) {
+          const query = this.mediaSearchQuery().toLowerCase().trim();
+          filteredMedias = filteredMedias.filter(m => 
+            m.fileName.toLowerCase().includes(query) ||
+            (m.tags && m.tags.some(t => t.name.toLowerCase().includes(query)))
+          );
+        }
+        
+        if (this.mediaSearchTag().trim()) {
+          const tag = this.mediaSearchTag().toLowerCase().trim();
+          filteredMedias = filteredMedias.filter(m => 
+            m.tags && m.tags.some(t => t.name.toLowerCase().includes(tag))
+          );
+        }
+        
+        if (this.mediaSearchDate().trim()) {
+          // Parsuj datę z inputa (format YYYY-MM-DD) i utwórz datę w UTC
+          const dateStr = this.mediaSearchDate().trim();
+          const [year, month, day] = dateStr.split('-').map(Number);
+          const searchDateStart = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+          const searchDateEnd = new Date(searchDateStart);
+          searchDateEnd.setUTCDate(searchDateEnd.getUTCDate() + 1);
+          
+          filteredMedias = filteredMedias.filter(m => {
+            const uploadedDate = new Date(m.uploadedAt);
+            // Porównaj tylko daty (bez czasu), używając UTC
+            const uploadedDateUTC = new Date(Date.UTC(
+              uploadedDate.getUTCFullYear(),
+              uploadedDate.getUTCMonth(),
+              uploadedDate.getUTCDate()
+            ));
+            const searchDateStartUTC = new Date(Date.UTC(
+              searchDateStart.getUTCFullYear(),
+              searchDateStart.getUTCMonth(),
+              searchDateStart.getUTCDate()
+            ));
+            const searchDateEndUTC = new Date(Date.UTC(
+              searchDateEnd.getUTCFullYear(),
+              searchDateEnd.getUTCMonth(),
+              searchDateEnd.getUTCDate()
+            ));
+            return uploadedDateUTC >= searchDateStartUTC && uploadedDateUTC < searchDateEndUTC;
+          });
+        }
+        
+        this.medias.set(filteredMedias);
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -131,6 +182,24 @@ export class AlbumDetailComponent implements OnInit, OnDestroy {
 
   loadMedias(albumId: string): void {
     // Media są już załadowane w loadAlbum
+  }
+
+  onMediaSearchChange(): void {
+    // Przeładuj album z filtrowaniem
+    const albumId = this.albumId();
+    if (albumId) {
+      this.loadAlbum(albumId);
+    }
+  }
+
+  clearMediaSearch(): void {
+    this.mediaSearchQuery.set('');
+    this.mediaSearchTag.set('');
+    this.mediaSearchDate.set('');
+    const albumId = this.albumId();
+    if (albumId) {
+      this.loadAlbum(albumId);
+    }
   }
 
   goBack(): void {
