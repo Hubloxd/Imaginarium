@@ -1,0 +1,428 @@
+<div class="min-h-screen bg-gray-950 text-gray-100">
+  @if (isLoading()) {
+    <div class="flex items-center justify-center min-h-screen">
+      <div class="text-center">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <p class="text-gray-400 mt-4">Ładowanie grupy...</p>
+      </div>
+    </div>
+  } @else if (error()) {
+    <div class="flex items-center justify-center min-h-screen">
+      <div class="text-center">
+        <svg class="w-16 h-16 mx-auto text-red-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p class="text-red-400 text-lg mb-2">{{ error() }}</p>
+        <button
+          (click)="goBack()"
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+        >
+          Wróć do listy grup
+        </button>
+      </div>
+    </div>
+  } @else if (group(); as currentGroup) {
+    <!-- Header -->
+    <div class="bg-gray-900 border-b border-gray-800 px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <button
+            (click)="goBack()"
+            class="text-gray-400 hover:text-white transition-colors"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+          <div>
+            <h1 class="text-2xl font-bold text-white">{{ currentGroup.name }}</h1>
+            @if (currentGroup.description) {
+              <p class="text-gray-400 text-sm mt-1">{{ currentGroup.description }}</p>
+            }
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          @if (canManageMembers()) {
+            <button
+              (click)="openInviteModal()"
+              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+              <span>Dodaj członka</span>
+            </button>
+            <button
+              (click)="openDeleteGroupModal()"
+              class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+              <span>Usuń grupę</span>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="p-6">
+      <!-- Group info -->
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <p class="text-gray-400 text-sm mb-1">Utworzona przez</p>
+            <p class="text-white font-medium">{{ currentGroup.createdByUsername }}</p>
+          </div>
+          <div>
+            <p class="text-gray-400 text-sm mb-1">Data utworzenia</p>
+            <p class="text-white font-medium">{{ formatDate(currentGroup.createdAt) }}</p>
+          </div>
+          <div>
+            <p class="text-gray-400 text-sm mb-1">Liczba członków</p>
+            <p class="text-white font-medium">{{ currentGroup.memberCount }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Members list -->
+      <div>
+        <h2 class="text-lg font-semibold text-white mb-4">Członkowie grupy</h2>
+        
+        @if (isLoadingMembers()) {
+          <div class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p class="text-gray-400 mt-4">Ładowanie członków...</p>
+          </div>
+        } @else if (membersError()) {
+          <div class="bg-gray-900 border border-red-800 rounded-lg p-4">
+            <p class="text-red-400">{{ membersError() }}</p>
+          </div>
+        } @else if (members().length === 0) {
+          <div class="text-center py-12 bg-gray-900 border border-gray-800 rounded-lg">
+            <svg class="w-16 h-16 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <p class="text-gray-400 text-lg">Brak członków w grupie</p>
+          </div>
+        } @else {
+          <div class="space-y-2">
+            @for (member of members(); track member.id) {
+              <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 hover:bg-gray-800 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-4 flex-1">
+                    <!-- Avatar -->
+                    <div class="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-lg font-medium text-white flex-shrink-0">
+                      {{ member.username.charAt(0).toUpperCase() }}
+                    </div>
+                    
+                    <!-- Member info -->
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 mb-1">
+                        <h3 class="text-white font-medium text-lg">{{ member.username }}</h3>
+                        <span class="px-2 py-1 bg-blue-600/20 text-blue-400 text-xs rounded">
+                          {{ getRoleName(member.role) }}
+                        </span>
+                      </div>
+                      <p class="text-gray-400 text-sm">{{ member.email }}</p>
+                      <p class="text-gray-500 text-xs mt-1">
+                        Dołączył: {{ formatDate(member.joinedAt) }}
+                        @if (member.invitedByUsername) {
+                          · Zaproszony przez: {{ member.invitedByUsername }}
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <!-- Actions for admin -->
+                  @if (canManageMembers()) {
+                    <div class="flex items-center gap-2">
+                      <button
+                        (click)="openEditRoleModal(member)"
+                        class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm transition-colors"
+                        title="Zmień rolę"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                      </button>
+                      <button
+                        (click)="openDeleteMemberModal(member)"
+                        class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors"
+                        title="Usuń członka"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Invite User Modal -->
+    @if (showInviteModal()) {
+      <div class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4" (click)="closeInviteModal()">
+        <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 w-full max-w-md" (click)="$event.stopPropagation()">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold text-white">Zaproś użytkownika</h3>
+            <button
+              (click)="closeInviteModal()"
+              class="text-gray-400 hover:text-white transition-colors"
+              [disabled]="isInviting()"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <form (ngSubmit)="inviteUser()" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">
+                Email użytkownika *
+              </label>
+              <input
+                type="email"
+                [(ngModel)]="inviteEmail"
+                name="email"
+                required
+                [disabled]="isInviting()"
+                class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                placeholder="email@example.com"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">
+                Rola *
+              </label>
+              <select
+                [(ngModel)]="inviteRole"
+                name="role"
+                required
+                [disabled]="isInviting()"
+                class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+              >
+                <option [ngValue]="GroupRole.Admin">Administrator</option>
+                <option [ngValue]="GroupRole.Member">Członek</option>
+                <option [ngValue]="GroupRole.Viewer">Przeglądający</option>
+              </select>
+              <p class="text-gray-400 text-xs mt-2">
+                {{ getRoleDescription(inviteRole()) }}
+              </p>
+            </div>
+
+            <div class="flex items-center gap-3 pt-4">
+              <button
+                type="submit"
+                [disabled]="isInviting() || !inviteEmail().trim()"
+                class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+              >
+                @if (isInviting()) {
+                  <span class="flex items-center justify-center gap-2">
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Zapraszanie...
+                  </span>
+                } @else {
+                  Zaproś
+                }
+              </button>
+              <button
+                type="button"
+                (click)="closeInviteModal()"
+                [disabled]="isInviting()"
+                class="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg transition-colors"
+              >
+                Anuluj
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
+
+    <!-- Edit Role Modal -->
+    @if (showEditRoleModal()) {
+      <div class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4" (click)="closeEditRoleModal()">
+        <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 w-full max-w-md" (click)="$event.stopPropagation()">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold text-white">Zmień rolę członka</h3>
+            <button
+              (click)="closeEditRoleModal()"
+              class="text-gray-400 hover:text-white transition-colors"
+              [disabled]="isUpdatingRole()"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          @if (editingMember(); as member) {
+            <div class="mb-4">
+              <p class="text-gray-300 mb-2">Użytkownik: <span class="text-white font-medium">{{ member.username }}</span></p>
+            </div>
+
+            <form (ngSubmit)="updateMemberRole()" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                  Nowa rola *
+                </label>
+                <select
+                  [(ngModel)]="newRole"
+                  name="role"
+                  required
+                  [disabled]="isUpdatingRole()"
+                  class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                >
+                  <option [ngValue]="GroupRole.Admin">Administrator</option>
+                  <option [ngValue]="GroupRole.Member">Członek</option>
+                  <option [ngValue]="GroupRole.Viewer">Przeglądający</option>
+                </select>
+                <p class="text-gray-400 text-xs mt-2">
+                  {{ getRoleDescription(newRole()) }}
+                </p>
+              </div>
+
+              <div class="flex items-center gap-3 pt-4">
+                <button
+                  type="submit"
+                  [disabled]="isUpdatingRole()"
+                  class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                >
+                  @if (isUpdatingRole()) {
+                    <span class="flex items-center justify-center gap-2">
+                      <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Aktualizowanie...
+                    </span>
+                  } @else {
+                    Zaktualizuj rolę
+                  }
+                </button>
+                <button
+                  type="button"
+                  (click)="closeEditRoleModal()"
+                  [disabled]="isUpdatingRole()"
+                  class="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg transition-colors"
+                >
+                  Anuluj
+                </button>
+              </div>
+            </form>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Delete Member Modal -->
+    @if (showDeleteMemberModal()) {
+      <div class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4" (click)="closeDeleteMemberModal()">
+        <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 w-full max-w-md" (click)="$event.stopPropagation()">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold text-white">Usuń członka</h3>
+            <button
+              (click)="closeDeleteMemberModal()"
+              class="text-gray-400 hover:text-white transition-colors"
+              [disabled]="isDeletingMember()"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          @if (memberToDelete(); as member) {
+            <div class="mb-4">
+              <p class="text-gray-300 mb-2">
+                Czy na pewno chcesz usunąć <span class="text-white font-medium">{{ member.username }}</span> z grupy?
+              </p>
+              <p class="text-gray-400 text-sm">Ta operacja jest nieodwracalna.</p>
+            </div>
+
+            <div class="flex items-center gap-3 pt-4">
+              <button
+                (click)="deleteMember()"
+                [disabled]="isDeletingMember()"
+                class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+              >
+                @if (isDeletingMember()) {
+                  <span class="flex items-center justify-center gap-2">
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Usuwanie...
+                  </span>
+                } @else {
+                  Usuń
+                }
+              </button>
+              <button
+                (click)="closeDeleteMemberModal()"
+                [disabled]="isDeletingMember()"
+                class="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg transition-colors"
+              >
+                Anuluj
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Delete Group Modal -->
+    @if (showDeleteGroupModal()) {
+      <div class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4" (click)="closeDeleteGroupModal()">
+        <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 w-full max-w-md" (click)="$event.stopPropagation()">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold text-white">Usuń grupę</h3>
+            <button
+              (click)="closeDeleteGroupModal()"
+              class="text-gray-400 hover:text-white transition-colors"
+              [disabled]="isDeletingGroup()"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="mb-4">
+            <p class="text-gray-300 mb-2">
+              Czy na pewno chcesz usunąć grupę <span class="text-white font-medium">{{ currentGroup.name }}</span>?
+            </p>
+            <p class="text-gray-400 text-sm">Ta operacja jest nieodwracalna. Wszystkie dane związane z grupą zostaną usunięte.</p>
+          </div>
+
+          <div class="flex items-center gap-3 pt-4">
+            <button
+              (click)="deleteGroup()"
+              [disabled]="isDeletingGroup()"
+              class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+            >
+              @if (isDeletingGroup()) {
+                <span class="flex items-center justify-center gap-2">
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Usuwanie...
+                </span>
+              } @else {
+                Usuń grupę
+              }
+            </button>
+            <button
+              (click)="closeDeleteGroupModal()"
+              [disabled]="isDeletingGroup()"
+              class="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg transition-colors"
+            >
+              Anuluj
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>

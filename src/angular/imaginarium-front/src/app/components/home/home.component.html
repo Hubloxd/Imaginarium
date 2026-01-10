@@ -48,6 +48,19 @@
         </svg>
         <span class="font-medium">Albumy</span>
       </button>
+
+      <button
+        (click)="setActiveTab('groups')"
+        [class.bg-gray-800]="activeTab() === 'groups'"
+        [class.text-white]="activeTab() === 'groups'"
+        [class.text-gray-400]="activeTab() !== 'groups'"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition-colors text-left"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+        </svg>
+        <span class="font-medium">Grupy</span>
+      </button>
     </nav>
 
     <!-- User section -->
@@ -93,6 +106,8 @@
             Zdjęcia
           } @else if (activeTab() === 'albums') {
             Albumy
+          } @else if (activeTab() === 'groups') {
+            Grupy
           }
         </h2>
       </div>
@@ -198,11 +213,24 @@
                           class="bg-gray-900 border border-gray-800 rounded-lg p-4 hover:bg-gray-800 transition-colors cursor-pointer"
                         >
                           <div class="flex items-center gap-4">
-                            <!-- Album icon (no thumbnail for now) -->
-                            <div class="w-20 h-20 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                              </svg>
+                            <!-- Album thumbnail -->
+                            <div class="w-20 h-20 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                              @if (album.coverThumbnailUrl) {
+                                <img
+                                  [src]="album.coverThumbnailUrl"
+                                  [alt]="album.name"
+                                  class="w-full h-full object-cover"
+                                  (error)="onThumbnailError($event)"
+                                />
+                              }
+                              <div 
+                                [class.hidden]="album.coverThumbnailUrl"
+                                class="w-full h-full flex items-center justify-center absolute inset-0"
+                              >
+                                <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                              </div>
                             </div>
                             
                             <!-- Album info -->
@@ -230,6 +258,9 @@
             }
           </div>
         </div>
+      } @else if (activeTab() === 'groups') {
+        <!-- Groups view -->
+        <app-groups></app-groups>
       }
     </div>
   </main>
