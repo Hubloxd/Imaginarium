@@ -2,6 +2,16 @@
 
 Aplikacja Imaginarium to galeria zdjęć i filmów, stworzona z myślą o użytkownikach, którzy chcą przechowywać, organizować i udostępniać swoje multimedialne wspomnienia w bezpieczny sposób na własnej infrastrukturze. Celem projektu jest zbudowanie funkcjonalnej platformy umożliwiającej zarządzanie kolekcją zdjęć i filmów z automatyczną klasyfikacją treści oraz elastycznym systemem udostępniania.
 
+## Zrzuty ekranu
+
+![Screenshot 1](screenshots/screenshot1.png)
+
+![Screenshot 2](screenshots/screenshot2.png)
+
+![Screenshot 3](screenshots/screenshot3.png)
+
+![Screenshot 4](screenshots/screenshot4.png)
+
 ## Główne funkcjonalności
 
 - **System użytkowników** – rejestracja i logowanie użytkowników z autoryzacją i uwierzytelnianiem
