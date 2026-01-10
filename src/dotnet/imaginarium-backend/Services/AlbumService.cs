@@ -15,6 +15,7 @@ public class AlbumService : IAlbumService
     private readonly IStorageService _storageService;
     private readonly IShareRepository _shareRepository;
     private readonly IGroupRepository _groupRepository;
+    private readonly IMediaTagRepository _mediaTagRepository;
     private readonly ApplicationDbContext _context;
     private readonly ILogger<AlbumService> _logger;
 
@@ -25,6 +26,7 @@ public class AlbumService : IAlbumService
         IStorageService storageService,
         IShareRepository shareRepository,
         IGroupRepository groupRepository,
+        IMediaTagRepository mediaTagRepository,
         ApplicationDbContext context,
         ILogger<AlbumService> logger)
     {
@@ -34,6 +36,7 @@ public class AlbumService : IAlbumService
         _storageService = storageService;
         _shareRepository = shareRepository;
         _groupRepository = groupRepository;
+        _mediaTagRepository = mediaTagRepository;
         _context = context;
         _logger = logger;
     }
@@ -113,11 +116,11 @@ public class AlbumService : IAlbumService
 
         // Sprawdź czy użytkownik jest właścicielem
         if (album.UserId == userId)
-            return MapToDetailDto(album);
+            return await MapToDetailDtoAsync(album);
 
         // Sprawdź czy album jest udostępniony użytkownikowi
         if (await HasAccessToAlbumAsync(id, userId))
-            return MapToDetailDto(album);
+            return await MapToDetailDtoAsync(album);
 
         return null;
     }
@@ -288,7 +291,7 @@ public class AlbumService : IAlbumService
         }
 
         if (files == null || files.Count == 0)
-            return MapToDetailDto(album);
+            return await MapToDetailDtoAsync(album);
 
         var maxOrder = album.AlbumMedias.Any() 
             ? album.AlbumMedias.Max(am => am.Order) 
@@ -323,7 +326,7 @@ public class AlbumService : IAlbumService
         // Załaduj album ponownie z AlbumMedias, aby mieć poprawny MediaCount
         album = await _albumRepository.GetByIdWithMediaAsync(album.Id) ?? album;
         
-        return MapToDetailDto(album);
+        return await MapToDetailDtoAsync(album);
     }
 
     public async Task<bool> RemoveMediaFromAlbumAsync(Guid albumId, Guid mediaId, Guid userId)
@@ -368,29 +371,52 @@ public class AlbumService : IAlbumService
         };
     }
 
-    private AlbumDetailResponseDto MapToDetailDto(Album album)
+    private async Task<AlbumDetailResponseDto> MapToDetailDtoAsync(Album album)
     {
-        var mediaList = album.AlbumMedias?
-            .OrderBy(am => am.Order)
-            .Select(am => am.Media)
-            .Where(m => m != null)
-            .Select(m => new MediaResponseDto
+        var mediaList = new List<MediaResponseDto>();
+        
+        if (album.AlbumMedias != null)
+        {
+            var orderedMedia = album.AlbumMedias
+                .OrderBy(am => am.Order)
+                .Select(am => am.Media)
+                .Where(m => m != null)
+                .ToList();
+
+            foreach (var media in orderedMedia)
             {
-                Id = m!.Id,
-                FileName = m.FileName,
-                FilePath = m.FilePath,
-                MediaUrl = _storageService.GetMediaUrl(m.FilePath),
-                FileSize = m.FileSize,
-                MediaType = m.MediaType.ToString(),
-                MimeType = m.MimeType,
-                UploadedAt = m.UploadedAt,
-                Width = m.Width,
-                Height = m.Height,
-                Duration = m.Duration,
-                ThumbnailPath = m.ThumbnailPath,
-                ThumbnailUrl = _storageService.GetThumbnailUrl(m.ThumbnailPath)
-            })
-            .ToList() ?? new List<MediaResponseDto>();
+                if (media == null) continue;
+
+                // Pobierz tagi dla tego media
+                var mediaTags = await _mediaTagRepository.GetByMediaIdAsync(media.Id);
+                var tags = mediaTags.Select(mt => new DTOs.TagDto
+                {
+                    Id = mt.Tag!.Id,
+                    Name = mt.Tag.Name,
+                    Category = mt.Tag.Category,
+                    Confidence = mt.Tag.Confidence,
+                    Source = mt.Source
+                }).ToList();
+
+                mediaList.Add(new MediaResponseDto
+                {
+                    Id = media.Id,
+                    FileName = media.FileName,
+                    FilePath = media.FilePath,
+                    MediaUrl = _storageService.GetMediaUrl(media.FilePath),
+                    FileSize = media.FileSize,
+                    MediaType = media.MediaType.ToString(),
+                    MimeType = media.MimeType,
+                    UploadedAt = media.UploadedAt,
+                    Width = media.Width,
+                    Height = media.Height,
+                    Duration = media.Duration,
+                    ThumbnailPath = media.ThumbnailPath,
+                    ThumbnailUrl = _storageService.GetThumbnailUrl(media.ThumbnailPath),
+                    Tags = tags
+                });
+            }
+        }
 
         return new AlbumDetailResponseDto
         {

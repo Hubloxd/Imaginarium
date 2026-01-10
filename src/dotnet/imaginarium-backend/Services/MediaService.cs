@@ -11,9 +11,11 @@ public class MediaService : IMediaService
     private readonly IMediaRepository _mediaRepository;
     private readonly IStorageService _storageService;
     private readonly IThumbnailQueueService _thumbnailQueueService;
+    private readonly IClassificationQueueService _classificationQueueService;
     private readonly IShareRepository _shareRepository;
     private readonly IGroupRepository _groupRepository;
     private readonly IAlbumRepository _albumRepository;
+    private readonly IMediaTagRepository _mediaTagRepository;
     private readonly ApplicationDbContext _context;
     private readonly ILogger<MediaService> _logger;
 
@@ -21,18 +23,22 @@ public class MediaService : IMediaService
         IMediaRepository mediaRepository,
         IStorageService storageService,
         IThumbnailQueueService thumbnailQueueService,
+        IClassificationQueueService classificationQueueService,
         IShareRepository shareRepository,
         IGroupRepository groupRepository,
         IAlbumRepository albumRepository,
+        IMediaTagRepository mediaTagRepository,
         ApplicationDbContext context,
         ILogger<MediaService> logger)
     {
         _mediaRepository = mediaRepository;
         _storageService = storageService;
         _thumbnailQueueService = thumbnailQueueService;
+        _classificationQueueService = classificationQueueService;
         _shareRepository = shareRepository;
         _groupRepository = groupRepository;
         _albumRepository = albumRepository;
+        _mediaTagRepository = mediaTagRepository;
         _context = context;
         _logger = logger;
     }
@@ -66,6 +72,12 @@ public class MediaService : IMediaService
         // Dodaj zadanie generowania miniatury do kolejki
         await _thumbnailQueueService.EnqueueThumbnailTaskAsync(media.Id, filePath, file.ContentType, mediaType);
 
+        // Dodaj zadanie klasyfikacji do kolejki (tylko dla obrazów)
+        if (mediaType == MediaTypeEnum.Image)
+        {
+            await _classificationQueueService.EnqueueClassificationTaskAsync(media.Id, filePath);
+        }
+
         // TODO: Ekstrakcja metadanych (szerokość, wysokość, czas trwania dla video)
         // Można użyć biblioteki jak ImageSharp dla obrazów lub FFmpeg dla video
 
@@ -80,11 +92,11 @@ public class MediaService : IMediaService
 
         // Sprawdź czy użytkownik jest właścicielem
         if (media.UserId == userId)
-            return MapToDto(media);
+            return await MapToDtoAsync(media);
 
         // Sprawdź czy media jest udostępnione użytkownikowi
         if (await HasAccessToMediaAsync(id, userId))
-            return MapToDto(media);
+            return await MapToDtoAsync(media);
 
         return null;
     }
@@ -230,7 +242,14 @@ public class MediaService : IMediaService
         // Połącz media użytkownika z udostępnionymi
         var allMedia = userMedia.Concat(sharedMedia).OrderByDescending(m => m.UploadedAt).ToList();
         
-        return allMedia.Select(MapToDto).ToList();
+        // Mapuj do DTO z tagami
+        var result = new List<MediaResponseDto>();
+        foreach (var media in allMedia)
+        {
+            result.Add(await MapToDtoAsync(media));
+        }
+        
+        return result;
     }
 
     private async Task<List<Album>> GetSharedAlbumsForUserAsync(Guid userId)
@@ -288,8 +307,19 @@ public class MediaService : IMediaService
         return await _mediaRepository.DeleteAsync(id);
     }
 
-    private MediaResponseDto MapToDto(Media media)
+    private async Task<MediaResponseDto> MapToDtoAsync(Media media)
     {
+        // Pobierz tagi dla tego media
+        var mediaTags = await _mediaTagRepository.GetByMediaIdAsync(media.Id);
+        var tags = mediaTags.Select(mt => new DTOs.TagDto
+        {
+            Id = mt.Tag!.Id,
+            Name = mt.Tag.Name,
+            Category = mt.Tag.Category,
+            Confidence = mt.Tag.Confidence,
+            Source = mt.Source
+        }).ToList();
+
         return new MediaResponseDto
         {
             Id = media.Id,
@@ -304,7 +334,30 @@ public class MediaService : IMediaService
             Height = media.Height,
             Duration = media.Duration,
             ThumbnailPath = media.ThumbnailPath,
-            ThumbnailUrl = _storageService.GetThumbnailUrl(media.ThumbnailPath)
+            ThumbnailUrl = _storageService.GetThumbnailUrl(media.ThumbnailPath),
+            Tags = tags
+        };
+    }
+
+    private MediaResponseDto MapToDto(Media media)
+    {
+        // Synchronous version for backward compatibility (will be updated to async where needed)
+        return new MediaResponseDto
+        {
+            Id = media.Id,
+            FileName = media.FileName,
+            FilePath = media.FilePath,
+            MediaUrl = _storageService.GetMediaUrl(media.FilePath),
+            FileSize = media.FileSize,
+            MediaType = media.MediaType.ToString(),
+            MimeType = media.MimeType,
+            UploadedAt = media.UploadedAt,
+            Width = media.Width,
+            Height = media.Height,
+            Duration = media.Duration,
+            ThumbnailPath = media.ThumbnailPath,
+            ThumbnailUrl = _storageService.GetThumbnailUrl(media.ThumbnailPath),
+            Tags = new List<DTOs.TagDto>() // Empty for now, will be populated in async methods
         };
     }
 }

@@ -17,6 +17,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Group> Groups { get; set; }
     public DbSet<GroupMember> GroupMembers { get; set; }
     public DbSet<Share> Shares { get; set; }
+    public DbSet<Tag> Tags { get; set; }
+    public DbSet<MediaTag> MediaTags { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -121,6 +123,30 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(e => e.SharedWithGroup)
                   .WithMany()
                   .HasForeignKey(e => e.SharedWithGroupId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Tag configuration
+        modelBuilder.Entity<Tag>(entity =>
+        {
+            entity.HasIndex(e => e.Name);
+        });
+
+        // MediaTag configuration (many-to-many)
+        modelBuilder.Entity<MediaTag>(entity =>
+        {
+            entity.HasIndex(e => e.MediaId);
+            entity.HasIndex(e => e.TagId);
+            entity.HasIndex(e => new { e.MediaId, e.TagId }).IsUnique();
+
+            entity.HasOne(e => e.Media)
+                  .WithMany(m => m.MediaTags)
+                  .HasForeignKey(e => e.MediaId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Tag)
+                  .WithMany(t => t.MediaTags)
+                  .HasForeignKey(e => e.TagId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
     }

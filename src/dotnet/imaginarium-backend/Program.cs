@@ -89,6 +89,8 @@ builder.Services.AddScoped<IAlbumRepository, AlbumRepository>();
 builder.Services.AddScoped<IMediaRepository, MediaRepository>();
 builder.Services.AddScoped<IGroupRepository, GroupRepository>();
 builder.Services.AddScoped<IShareRepository, ShareRepository>();
+builder.Services.AddScoped<ITagRepository, TagRepository>();
+builder.Services.AddScoped<IMediaTagRepository, MediaTagRepository>();
 
 // Configure Redis
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
@@ -105,9 +107,14 @@ builder.Services.AddScoped<IAlbumService, AlbumService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
 builder.Services.AddScoped<IShareService, ShareService>();
 builder.Services.AddScoped<IThumbnailQueueService, ThumbnailQueueService>();
+builder.Services.AddScoped<IClassificationQueueService, ClassificationQueueService>();
+
+// Register HttpClient for AI classification service
+builder.Services.AddHttpClient();
 
 // Register background services
 builder.Services.AddHostedService<ThumbnailProcessorService>();
+builder.Services.AddHostedService<ClassificationProcessorService>();
 
 // Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();

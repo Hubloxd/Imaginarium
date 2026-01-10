@@ -47,4 +47,5 @@ public class Media
     public User? User { get; set; }
 
     public ICollection<AlbumMedia> AlbumMedias { get; set; } = new List<AlbumMedia>();
+    public ICollection<MediaTag> MediaTags { get; set; } = new List<MediaTag>();
 }

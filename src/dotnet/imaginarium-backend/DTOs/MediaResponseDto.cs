@@ -15,4 +15,5 @@ public class MediaResponseDto
     public int? Duration { get; set; }
     public string? ThumbnailPath { get; set; }
     public string? ThumbnailUrl { get; set; }
+    public List<TagDto> Tags { get; set; } = new();
 }

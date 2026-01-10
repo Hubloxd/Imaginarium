@@ -48,6 +48,27 @@ services:
     image: redis
     restart: unless-stopped
 
+  ai-classification:
+    container_name: imaginarium-ai-classification
+    build:
+      context: ../src/fastapi/ai-classification/
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TORCH_HOME=/app/.cache/torch
+    volumes:
+      - torch-cache:/app/.cache/torch
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
   nginx:
     container_name: imaginarium-nginx
     image: nginx:1.25
@@ -63,8 +84,10 @@ services:
       - imaginarium-front
       - postgres
       - redis
+      - ai-classification
 
 volumes:
   media-storage:
   thumbnail-storage:
+  torch-cache:
 
