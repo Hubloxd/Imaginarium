@@ -45,6 +45,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   showViewer = signal<boolean>(false);
   viewerMedia = signal<MediaItem[]>([]);
   viewerIndex = signal<number>(0);
+  mediaSearchQuery = signal<string>('');
+  mediaSearchTag = signal<string>('');
+  mediaSearchDate = signal<string>('');
   
   // Thumbnail retry tracking
   private thumbnailRetryMap = new Map<string, number>(); // mediaId -> retry count
@@ -277,7 +280,23 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.isLoadingMedias.set(true);
     this.mediasError.set(null);
 
-    this.mediaService.getMedia().subscribe({
+    const searchParams: any = {};
+    if (this.mediaSearchQuery().trim()) {
+      searchParams.query = this.mediaSearchQuery().trim();
+    }
+    if (this.mediaSearchTag().trim()) {
+      searchParams.tag = this.mediaSearchTag().trim();
+    }
+    if (this.mediaSearchDate().trim()) {
+      searchParams.date = this.mediaSearchDate().trim();
+    }
+
+    const hasSearchParams = Object.keys(searchParams).length > 0;
+    const request = hasSearchParams 
+      ? this.mediaService.searchMedia(searchParams)
+      : this.mediaService.getUserMedia();
+
+    request.subscribe({
       next: (medias) => {
         this.medias.set(medias);
         this.isLoadingMedias.set(false);
@@ -288,6 +307,20 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.isLoadingMedias.set(false);
       }
     });
+  }
+
+  onMediaSearchChange(): void {
+    // Debounce search - załaduj po 500ms od ostatniej zmiany
+    setTimeout(() => {
+      this.loadMedias();
+    }, 500);
+  }
+
+  clearMediaSearch(): void {
+    this.mediaSearchQuery.set('');
+    this.mediaSearchTag.set('');
+    this.mediaSearchDate.set('');
+    this.loadMedias();
   }
 
   openMediaViewer(media: Media, allMedias: Media[]): void {
