@@ -4,6 +4,8 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { AlbumService, Album, AlbumDetail, Media } from '../../services/album.service';
 import { AuthService } from '../../services/auth.service';
 import { MediaViewerComponent, MediaItem } from '../media-viewer/media-viewer.component';
+import { ContextMenuComponent, ContextMenuItem } from '../context-menu/context-menu.component';
+import { ShareModalComponent } from '../share-modal/share-modal.component';
 
 interface MediaGroup {
   date: string;
@@ -13,7 +15,7 @@ interface MediaGroup {
 @Component({
   selector: 'app-album-detail',
   standalone: true,
-  imports: [CommonModule, MediaViewerComponent],
+  imports: [CommonModule, MediaViewerComponent, ContextMenuComponent, ShareModalComponent],
   templateUrl: './album-detail.component.html',
   styleUrl: './album-detail.component.css'
 })
@@ -28,6 +30,18 @@ export class AlbumDetailComponent implements OnInit {
   viewerIndex = signal<number>(0);
   isDragging = signal<boolean>(false);
   isUploading = signal<boolean>(false);
+
+  // Context menu
+  contextMenuVisible = signal<boolean>(false);
+  contextMenuX = signal<number>(0);
+  contextMenuY = signal<number>(0);
+  contextMenuItems = signal<ContextMenuItem[]>([]);
+  selectedMedia: Media | null = null;
+
+  // Share modal
+  showShareModal = signal<boolean>(false);
+  shareMediaId = signal<string | undefined>(undefined);
+  shareAlbumId = signal<string | undefined>(undefined);
 
   groupedMedias = computed(() => {
     const allMedias = this.medias();
@@ -217,5 +231,66 @@ export class AlbumDetailComponent implements OnInit {
   triggerFileInput(): void {
     const input = document.getElementById('file-input') as HTMLInputElement;
     input?.click();
+  }
+
+  onMediaContextMenu(event: MouseEvent, media: Media): void {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    this.selectedMedia = media;
+    this.contextMenuX.set(event.clientX);
+    this.contextMenuY.set(event.clientY);
+    
+    this.contextMenuItems.set([
+      {
+        label: 'Udostępnij',
+        icon: 'M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z',
+        action: () => this.openShareModal(media.id, undefined)
+      }
+    ]);
+    
+    this.contextMenuVisible.set(true);
+  }
+
+  onAlbumContextMenu(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    this.contextMenuX.set(event.clientX);
+    this.contextMenuY.set(event.clientY);
+    
+    const album = this.album();
+    if (!album) return;
+    
+    this.contextMenuItems.set([
+      {
+        label: 'Udostępnij album',
+        icon: 'M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z',
+        action: () => this.openShareModal(undefined, album.id)
+      }
+    ]);
+    
+    this.contextMenuVisible.set(true);
+  }
+
+  closeContextMenu(): void {
+    this.contextMenuVisible.set(false);
+  }
+
+  openShareModal(mediaId?: string, albumId?: string): void {
+    this.shareMediaId.set(mediaId);
+    this.shareAlbumId.set(albumId);
+    this.showShareModal.set(true);
+  }
+
+  closeShareModal(): void {
+    this.showShareModal.set(false);
+    this.shareMediaId.set(undefined);
+    this.shareAlbumId.set(undefined);
+  }
+
+  onShared(): void {
+    // Można dodać powiadomienie o udostępnieniu
+    this.closeShareModal();
   }
 }
