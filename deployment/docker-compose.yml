@@ -30,6 +30,16 @@ services:
     env_file:
       - env/postgres.env
 
+  pgadmin:
+    container_name: imaginarium-dotnet-pgadmin
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+
   redis:
     container_name: imaginarium-redis
     image: redis
