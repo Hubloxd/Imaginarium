@@ -42,6 +42,13 @@ public class MediaRepository : IMediaRepository
         return media;
     }
 
+    public async Task<Media> UpdateAsync(Media media)
+    {
+        _context.Media.Update(media);
+        await _context.SaveChangesAsync();
+        return media;
+    }
+
     public async Task<bool> DeleteAsync(Guid id)
     {
         var media = await _context.Media.FindAsync(id);

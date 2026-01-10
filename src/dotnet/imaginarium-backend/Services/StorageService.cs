@@ -73,13 +73,6 @@ public class StorageService : IStorageService
         }
     }
 
-    public Task<string> GenerateThumbnailAsync(string filePath, string mimeType)
-    {
-        // TODO: Implementacja generowania miniatur (np. ImageSharp, SkiaSharp)
-        // Na razie zwracamy tę samą ścieżkę
-        return Task.FromResult(filePath);
-    }
-
     public string GetMediaUrl(string filePath)
     {
         // Konwertuj ścieżkę bezwzględną na URL względny dla nginx
@@ -105,6 +98,23 @@ public class StorageService : IStorageService
         if (string.IsNullOrEmpty(thumbnailPath))
             return string.Empty;
 
-        return GetMediaUrl(thumbnailPath);
+        // Jeśli ścieżka już zaczyna się od /thumbnails/, zwróć ją bez zmian
+        if (thumbnailPath.StartsWith("/thumbnails/"))
+            return thumbnailPath;
+
+        // Wyciągnij tylko nazwę pliku (guid.jpg lub guid_xxx.jpg)
+        var fileName = Path.GetFileName(thumbnailPath);
+        
+        // Jeśli nazwa pliku zawiera GUID na początku (format: {guid}.jpg lub {guid}_xxx.jpg),
+        // wyciągnij tylko GUID i dodaj .jpg
+        if (fileName.Contains('_'))
+        {
+            // Format: {guid}_xxx.jpg -> {guid}.jpg
+            var guidPart = fileName.Substring(0, fileName.IndexOf('_'));
+            var extension = Path.GetExtension(fileName);
+            fileName = $"{guidPart}{extension}";
+        }
+        
+        return $"/thumbnails/{fileName}";
     }
 }
