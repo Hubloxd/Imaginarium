@@ -3,6 +3,7 @@ using ImaginariumBackend.DTOs;
 using ImaginariumBackend.Models;
 using ImaginariumBackend.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace ImaginariumBackend.Services;
 
@@ -12,6 +13,8 @@ public class AlbumService : IAlbumService
     private readonly IMediaRepository _mediaRepository;
     private readonly IMediaService _mediaService;
     private readonly IStorageService _storageService;
+    private readonly IShareRepository _shareRepository;
+    private readonly IGroupRepository _groupRepository;
     private readonly ApplicationDbContext _context;
     private readonly ILogger<AlbumService> _logger;
 
@@ -20,6 +23,8 @@ public class AlbumService : IAlbumService
         IMediaRepository mediaRepository,
         IMediaService mediaService,
         IStorageService storageService,
+        IShareRepository shareRepository,
+        IGroupRepository groupRepository,
         ApplicationDbContext context,
         ILogger<AlbumService> logger)
     {
@@ -27,6 +32,8 @@ public class AlbumService : IAlbumService
         _mediaRepository = mediaRepository;
         _mediaService = mediaService;
         _storageService = storageService;
+        _shareRepository = shareRepository;
+        _groupRepository = groupRepository;
         _context = context;
         _logger = logger;
     }
@@ -84,25 +91,140 @@ public class AlbumService : IAlbumService
     public async Task<AlbumResponseDto?> GetAlbumByIdAsync(Guid id, Guid userId)
     {
         var album = await _albumRepository.GetByIdWithMediaAsync(id);
-        if (album == null || album.UserId != userId)
+        if (album == null)
             return null;
 
-        return MapToDto(album);
+        // Sprawdź czy użytkownik jest właścicielem
+        if (album.UserId == userId)
+            return MapToDto(album);
+
+        // Sprawdź czy album jest udostępniony użytkownikowi
+        if (await HasAccessToAlbumAsync(id, userId))
+            return MapToDto(album);
+
+        return null;
     }
 
     public async Task<AlbumDetailResponseDto?> GetAlbumDetailByIdAsync(Guid id, Guid userId)
     {
         var album = await _albumRepository.GetByIdWithMediaAsync(id);
-        if (album == null || album.UserId != userId)
+        if (album == null)
             return null;
 
-        return MapToDetailDto(album);
+        // Sprawdź czy użytkownik jest właścicielem
+        if (album.UserId == userId)
+            return MapToDetailDto(album);
+
+        // Sprawdź czy album jest udostępniony użytkownikowi
+        if (await HasAccessToAlbumAsync(id, userId))
+            return MapToDetailDto(album);
+
+        return null;
+    }
+
+    private async Task<bool> HasAccessToAlbumAsync(Guid albumId, Guid userId)
+    {
+        // Sprawdź udostępnienia bezpośrednio dla użytkownika
+        var userShares = await _shareRepository.GetBySharedWithUserIdAsync(userId);
+        if (userShares.Any(s => s.AlbumId == albumId && (!s.ExpiresAt.HasValue || s.ExpiresAt.Value > DateTime.UtcNow)))
+            return true;
+
+        // Sprawdź udostępnienia dla grup użytkownika
+        var userGroups = await _groupRepository.GetByUserIdAsync(userId);
+        foreach (var group in userGroups)
+        {
+            var groupShares = await _shareRepository.GetByGroupIdAsync(group.Id);
+            if (groupShares.Any(s => s.AlbumId == albumId && (!s.ExpiresAt.HasValue || s.ExpiresAt.Value > DateTime.UtcNow)))
+                return true;
+        }
+
+        // Sprawdź publiczne udostępnienia
+        var publicShares = await _context.Shares
+            .AnyAsync(s => s.AlbumId == albumId && s.IsPublic && (!s.ExpiresAt.HasValue || s.ExpiresAt.Value > DateTime.UtcNow));
+
+        return publicShares;
+    }
+
+    private async Task<bool> HasEditPermissionToAlbumAsync(Guid albumId, Guid userId)
+    {
+        // Sprawdź udostępnienia bezpośrednio dla użytkownika z uprawnieniami Edit
+        var userShares = await _shareRepository.GetBySharedWithUserIdAsync(userId);
+        if (userShares.Any(s => s.AlbumId == albumId && 
+                               s.PermissionLevel == PermissionEnum.Edit && 
+                               (!s.ExpiresAt.HasValue || s.ExpiresAt.Value > DateTime.UtcNow)))
+            return true;
+
+        // Sprawdź udostępnienia dla grup użytkownika z uprawnieniami Edit
+        var userGroups = await _groupRepository.GetByUserIdAsync(userId);
+        foreach (var group in userGroups)
+        {
+            var groupShares = await _shareRepository.GetByGroupIdAsync(group.Id);
+            if (groupShares.Any(s => s.AlbumId == albumId && 
+                                   s.PermissionLevel == PermissionEnum.Edit && 
+                                   (!s.ExpiresAt.HasValue || s.ExpiresAt.Value > DateTime.UtcNow)))
+                return true;
+        }
+
+        // Sprawdź publiczne udostępnienia z uprawnieniami Edit
+        var publicShares = await _context.Shares
+            .AnyAsync(s => s.AlbumId == albumId && 
+                          s.IsPublic && 
+                          s.PermissionLevel == PermissionEnum.Edit && 
+                          (!s.ExpiresAt.HasValue || s.ExpiresAt.Value > DateTime.UtcNow));
+
+        return publicShares;
     }
 
     public async Task<List<AlbumResponseDto>> GetUserAlbumsAsync(Guid userId)
     {
-        var albums = await _albumRepository.GetByUserIdAsync(userId);
-        return albums.Select(MapToDto).ToList();
+        // Pobierz albumy użytkownika
+        var userAlbums = await _albumRepository.GetByUserIdAsync(userId);
+        var albumIds = new HashSet<Guid>(userAlbums.Select(a => a.Id));
+
+        // Pobierz albumy udostępnione bezpośrednio użytkownikowi
+        var sharesForUser = await _shareRepository.GetBySharedWithUserIdAsync(userId);
+        var sharedAlbumIds = sharesForUser
+            .Where(s => s.AlbumId.HasValue && (!s.ExpiresAt.HasValue || s.ExpiresAt.Value > DateTime.UtcNow))
+            .Select(s => s.AlbumId!.Value)
+            .ToList();
+
+        // Pobierz albumy udostępnione grupom, w których użytkownik jest członkiem
+        var userGroups = await _groupRepository.GetByUserIdAsync(userId);
+        foreach (var group in userGroups)
+        {
+            var groupShares = await _shareRepository.GetByGroupIdAsync(group.Id);
+            var groupAlbumIds = groupShares
+                .Where(s => s.AlbumId.HasValue && (!s.ExpiresAt.HasValue || s.ExpiresAt.Value > DateTime.UtcNow))
+                .Select(s => s.AlbumId!.Value);
+            sharedAlbumIds.AddRange(groupAlbumIds);
+        }
+
+        // Pobierz albumy udostępnione publicznie
+        var publicShares = await _context.Shares
+            .Where(s => s.AlbumId != null && s.IsPublic && (!s.ExpiresAt.HasValue || s.ExpiresAt.Value > DateTime.UtcNow))
+            .Select(s => s.AlbumId!.Value)
+            .ToListAsync();
+
+        sharedAlbumIds.AddRange(publicShares);
+
+        // Pobierz wszystkie udostępnione albumy (które nie są już w liście użytkownika)
+        var uniqueSharedAlbumIds = sharedAlbumIds.Distinct().Where(id => !albumIds.Contains(id)).ToList();
+        
+        var sharedAlbums = new List<Album>();
+        if (uniqueSharedAlbumIds.Any())
+        {
+            sharedAlbums = await _context.Albums
+                .Include(a => a.CoverMedia)
+                .Include(a => a.AlbumMedias)
+                .Where(a => uniqueSharedAlbumIds.Contains(a.Id))
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+        }
+
+        // Połącz albumy użytkownika z udostępnionymi
+        var allAlbums = userAlbums.Concat(sharedAlbums).OrderByDescending(a => a.CreatedAt).ToList();
+        
+        return allAlbums.Select(MapToDto).ToList();
     }
 
     public async Task<bool> DeleteAlbumAsync(Guid id, Guid userId)
@@ -151,8 +273,19 @@ public class AlbumService : IAlbumService
     public async Task<AlbumDetailResponseDto?> AddFilesToAlbumAsync(Guid albumId, Guid userId, List<IFormFile> files)
     {
         var album = await _albumRepository.GetByIdWithMediaAsync(albumId);
-        if (album == null || album.UserId != userId)
+        if (album == null)
             return null;
+
+        // Sprawdź czy użytkownik jest właścicielem
+        bool isOwner = album.UserId == userId;
+        
+        // Jeśli nie jest właścicielem, sprawdź uprawnienia z udostępnienia
+        if (!isOwner)
+        {
+            var hasEditPermission = await HasEditPermissionToAlbumAsync(albumId, userId);
+            if (!hasEditPermission)
+                return null;
+        }
 
         if (files == null || files.Count == 0)
             return MapToDetailDto(album);

@@ -27,7 +27,11 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 });
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -84,6 +88,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAlbumRepository, AlbumRepository>();
 builder.Services.AddScoped<IMediaRepository, MediaRepository>();
 builder.Services.AddScoped<IGroupRepository, GroupRepository>();
+builder.Services.AddScoped<IShareRepository, ShareRepository>();
 
 // Configure Redis
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
@@ -98,6 +103,7 @@ builder.Services.AddScoped<IStorageService, StorageService>();
 builder.Services.AddScoped<IMediaService, MediaService>();
 builder.Services.AddScoped<IAlbumService, AlbumService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<IShareService, ShareService>();
 builder.Services.AddScoped<IThumbnailQueueService, ThumbnailQueueService>();
 
 // Register background services

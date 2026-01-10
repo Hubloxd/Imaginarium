@@ -16,6 +16,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<AlbumMedia> AlbumMedia { get; set; }
     public DbSet<Group> Groups { get; set; }
     public DbSet<GroupMember> GroupMembers { get; set; }
+    public DbSet<Share> Shares { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -85,6 +86,42 @@ public class ApplicationDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(e => e.InvitedByUserId)
                   .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Share configuration
+        modelBuilder.Entity<Share>(entity =>
+        {
+            entity.HasIndex(e => e.ShareToken).IsUnique();
+            entity.HasIndex(e => e.MediaId);
+            entity.HasIndex(e => e.AlbumId);
+            entity.HasIndex(e => e.SharedByUserId);
+            entity.HasIndex(e => e.SharedWithUserId);
+            entity.HasIndex(e => e.SharedWithGroupId);
+            
+            entity.HasOne(e => e.Media)
+                  .WithMany()
+                  .HasForeignKey(e => e.MediaId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(e => e.Album)
+                  .WithMany()
+                  .HasForeignKey(e => e.AlbumId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(e => e.SharedByUser)
+                  .WithMany()
+                  .HasForeignKey(e => e.SharedByUserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+            
+            entity.HasOne(e => e.SharedWithUser)
+                  .WithMany()
+                  .HasForeignKey(e => e.SharedWithUserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(e => e.SharedWithGroup)
+                  .WithMany()
+                  .HasForeignKey(e => e.SharedWithGroupId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
