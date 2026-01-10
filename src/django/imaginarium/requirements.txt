@@ -1,11 +1,13 @@
 django
 django-db
 djangorestframework
+djangorestframework-simplejwt
 celery
 django_celery_beat
 django-redis
 redis
 django-cors-headers
+django-filter
 pillow
 psycopg2
 gunicorn[standard]
