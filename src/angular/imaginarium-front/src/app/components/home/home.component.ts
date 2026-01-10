@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { AlbumService, Album } from '../../services/album.service';
+import { GroupsComponent } from '../groups/groups.component';
 
-type TabType = 'photos' | 'albums';
+type TabType = 'photos' | 'albums' | 'groups';
 
 interface AlbumGroup {
   year: number;
@@ -15,7 +16,7 @@ interface AlbumGroup {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, GroupsComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
@@ -86,6 +87,7 @@ export class HomeComponent implements OnInit {
     if (tab === 'albums') {
       this.loadAlbums();
     }
+    // Groups component ładuje dane w ngOnInit
   }
 
   loadAlbums(): void {
@@ -133,5 +135,14 @@ export class HomeComponent implements OnInit {
 
   openAlbum(albumId: string): void {
     this.router.navigate(['/albums', albumId]);
+  }
+
+  onThumbnailError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
+    const fallback = img.nextElementSibling as HTMLElement;
+    if (fallback) {
+      fallback.classList.remove('hidden');
+    }
   }
 }
