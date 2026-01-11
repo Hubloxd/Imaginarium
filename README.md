@@ -117,6 +117,144 @@ Aby zatrzymać i usunąć wolumeny (uwaga: spowoduje to usunięcie danych):
 docker-compose down -v
 ```
 
+## Dokumentacja API
+
+### Zarządzanie kontami
+
+- **POST** `/api/accounts/register` - Rejestracja nowego użytkownika
+  - Body: `RegisterDto` (email, username, password)
+  - Zwraca: `AuthResponseDto` (id, email, username, accessToken)
+
+- **POST** `/api/accounts/login` - Logowanie użytkownika
+  - Body: `LoginDto` (email, password)
+  - Zwraca: `AuthResponseDto` (id, email, username, accessToken)
+
+### Zarządzanie albumami
+
+- **POST** `/api/albums` - Utworzenie nowego albumu
+  - Body: `multipart/form-data` (Name, Description, files[])
+  - Zwraca: `AlbumResponseDto`
+
+- **GET** `/api/albums` - Pobranie listy wszystkich albumów
+  - Zwraca: `AlbumResponseDto[]`
+
+- **GET** `/api/albums/{id}` - Pobranie szczegółów albumu
+  - Parametry: `id` (UUID)
+  - Zwraca: `AlbumDetailResponseDto`
+
+- **DELETE** `/api/albums/{id}` - Usunięcie albumu
+  - Parametry: `id` (UUID)
+
+- **POST** `/api/albums/{albumId}/media` - Dodanie mediów do albumu
+  - Parametry: `albumId` (UUID)
+  - Body: `multipart/form-data` (files[])
+  - Zwraca: `AlbumDetailResponseDto`
+
+- **POST** `/api/albums/{albumId}/media/{mediaId}` - Dodanie istniejącego medium do albumu
+  - Parametry: `albumId` (UUID), `mediaId` (UUID)
+
+- **DELETE** `/api/albums/{albumId}/media/{mediaId}` - Usunięcie medium z albumu
+  - Parametry: `albumId` (UUID), `mediaId` (UUID)
+
+### Zarządzanie grupami
+
+- **POST** `/api/groups` - Utworzenie nowej grupy
+  - Body: `CreateGroupDto` (name, description, isPrivate)
+  - Zwraca: `GroupResponseDto`
+
+- **GET** `/api/groups` - Pobranie listy wszystkich grup
+  - Zwraca: `GroupResponseDto[]`
+
+- **GET** `/api/groups/{id}` - Pobranie szczegółów grupy
+  - Parametry: `id` (UUID)
+  - Zwraca: `GroupResponseDto`
+
+- **DELETE** `/api/groups/{id}` - Usunięcie grupy
+  - Parametry: `id` (UUID)
+
+- **GET** `/api/groups/invitations` - Pobranie listy zaproszeń do grup
+  - Zwraca: `GroupMemberDto[]`
+
+- **POST** `/api/groups/{groupId}/invite` - Zaproszenie użytkownika do grupy
+  - Parametry: `groupId` (UUID)
+  - Body: `InviteUserDto` (email, role)
+
+- **POST** `/api/groups/{groupId}/accept` - Akceptacja zaproszenia do grupy
+  - Parametry: `groupId` (UUID)
+
+- **POST** `/api/groups/{groupId}/reject` - Odrzucenie zaproszenia do grupy
+  - Parametry: `groupId` (UUID)
+
+- **GET** `/api/groups/{groupId}/members` - Pobranie listy członków grupy
+  - Parametry: `groupId` (UUID)
+  - Zwraca: `GroupMemberDto[]`
+
+- **DELETE** `/api/groups/{groupId}/members/{memberId}` - Usunięcie członka z grupy
+  - Parametry: `groupId` (UUID), `memberId` (UUID)
+
+- **PUT** `/api/groups/{groupId}/members/{memberId}/role` - Aktualizacja roli członka
+  - Parametry: `groupId` (UUID), `memberId` (UUID)
+  - Body: `UpdateMemberRoleDto` (role)
+
+- **POST** `/api/groups/{groupId}/leave` - Opuszczenie grupy
+  - Parametry: `groupId` (UUID)
+
+### Zarządzanie mediami
+
+- **GET** `/api/media` - Pobranie listy wszystkich mediów
+  - Zwraca: `MediaResponseDto[]`
+
+- **GET** `/api/media/search` - Wyszukiwanie mediów
+  - Query params: `query` (string), `tag` (string), `date` (date-time), `albumId` (UUID)
+  - Zwraca: `MediaResponseDto[]`
+
+- **GET** `/api/media/{id}` - Pobranie szczegółów medium
+  - Parametry: `id` (UUID)
+  - Zwraca: `MediaResponseDto`
+
+- **PUT** `/api/media/{id}` - Aktualizacja medium
+  - Parametry: `id` (UUID)
+  - Body: `multipart/form-data` (file)
+  - Zwraca: `MediaResponseDto`
+
+- **DELETE** `/api/media/{id}` - Usunięcie medium
+  - Parametry: `id` (UUID)
+
+### Zarządzanie udostępnieniami
+
+- **POST** `/api/shares` - Utworzenie udostępnienia
+  - Body: `CreateShareDto` (mediaId, albumId, sharedWithUserId, sharedWithUserEmail, sharedWithGroupId, isPublic, expiresAt, permissionLevel)
+  - Zwraca: `ShareResponseDto`
+
+- **GET** `/api/shares/token/{token}` - Pobranie udostępnienia po tokenie
+  - Parametry: `token` (string)
+  - Zwraca: `ShareResponseDto`
+
+- **GET** `/api/shares/validate/{token}` - Walidacja tokenu udostępnienia
+  - Parametry: `token` (string)
+  - Zwraca: `boolean`
+
+- **DELETE** `/api/shares/{id}` - Usunięcie udostępnienia
+  - Parametry: `id` (UUID)
+
+- **POST** `/api/shares/group` - Utworzenie udostępnienia dla grupy
+  - Body: `CreateShareDto`
+  - Zwraca: `ShareResponseDto`
+
+- **GET** `/api/shares/group/{groupId}` - Pobranie udostępnień grupy
+  - Parametry: `groupId` (UUID)
+  - Zwraca: `ShareResponseDto[]`
+
+- **GET** `/api/shares/for-me` - Pobranie udostępnień otrzymanych przez użytkownika
+  - Zwraca: `ShareResponseDto[]`
+
+- **GET** `/api/shares/by-me` - Pobranie udostępnień utworzonych przez użytkownika
+  - Zwraca: `ShareResponseDto[]`
+
+### Uwagi
+
+- Wszystkie endpointy wymagają autoryzacji przez token Bearer (JWT), z wyjątkiem endpointów rejestracji i logowania
+
 ## Rozwój
 
 ### Backend (.NET)
