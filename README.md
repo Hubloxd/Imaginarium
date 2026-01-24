@@ -801,20 +801,13 @@ if tag.strip():
 ### 2. Przesyłanie mediów
 
 1. Zaloguj się do aplikacji
-2. Na stronie głównej kliknij "Prześlij pliki" lub przeciągnij pliki
+2. W panelu bocznym wybierz przycisk Albumy i utwórz nowy album
+3. Wybierz pliki do uploadu
 3. **Ważne**: Upload jest natychmiastowy - nie czekasz na generowanie miniatur!
 4. Miniaturki i klasyfikacje AI pojawią się automatycznie w tle (zwykle w ciągu kilku sekund)
 
-**Zrzut ekranu**: [Dodać zrzut ekranu uploadu]
+**Zrzut ekranu**: ![Screenshot 5](screenshots/screenshot5.png)
 
-### 3. Tworzenie albumów
-
-1. Kliknij "Utwórz album" w menu
-2. Wypełnij nazwę i opcjonalnie opis
-3. Możesz od razu dodać pliki podczas tworzenia albumu
-4. Album zostanie utworzony natychmiast
-
-**Zrzut ekranu**: [Dodać zrzut ekranu tworzenia albumu]
 
 ### 4. Udostępnianie publicznym linkiem
 
@@ -824,7 +817,7 @@ if tag.strip():
 4. Po utworzeniu skopiuj link publiczny
 5. Link można udostępnić komukolwiek - dostęp bez logowania
 
-**Zrzut ekranu**: [Dodać zrzut ekranu udostępniania]
+**Zrzut ekranu**: ![Screenshot 6](screenshots/screenshot6.png)
 
 ### 5. Wyszukiwanie
 
@@ -833,9 +826,8 @@ if tag.strip():
    - Nazwie pliku
    - Klasyfikacjach AI (np. "dog", "landscape")
    - Dacie
-   - Albumie
 
-**Zrzut ekranu**: [Dodać zrzut ekranu wyszukiwania]
+**Zrzut ekranu**: ![Screenshot 7](screenshots/screenshot7.png)
 
 ## Napotkane problemy i ograniczenia
 
