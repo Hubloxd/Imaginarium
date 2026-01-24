@@ -13,17 +13,16 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 
-from .env_var import (DB_NAME, DB_USER, \
-                      DB_PASS, DB_HOST, DB_PORT, CELERY_BROKER_REDIS_URL,
-                      CACHE_REDIS_URL)
-
-env_variables = [DB_NAME, DB_USER, DB_PASS,
-                 DB_HOST, DB_PORT, CELERY_BROKER_REDIS_URL,
-                 CACHE_REDIS_URL]
-
-if any(not i for i in env_variables):
-    raise Exception(
-        f"One of the environment variables is not set. Please check the env_var file. Should be called with .get_value()")
+from .env_var import (
+    DB_NAME,
+    DB_USER,
+    DB_PASS,
+    DB_HOST,
+    DB_PORT,
+    CELERY_BROKER_REDIS_URL,
+    CACHE_REDIS_URL,
+    AI_SERVICE_URL as ENV_AI_SERVICE_URL,
+)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -40,6 +39,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+APPEND_SLASH = False
 
 # Application definition
 
@@ -53,11 +53,17 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
+    'django_filters',
     'django_celery_results',
     'django_celery_beat',
     'drf_spectacular',
     'django_extensions',
     'accounts',
+    'albums',
+    'media_app',
+    'tags',
+    'sharing',
+    'groups',
 ]
 
 MIDDLEWARE = [
@@ -65,6 +71,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'imaginarium.middleware.DisableCSRFForAPI',  # Custom middleware to disable CSRF for API
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -150,9 +157,10 @@ STATICFILES_DIRS = [
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = '/media/'
 
+THUMBNAILS_ROOT = BASE_DIR / "thumbnails"
+THUMBNAILS_URL = "/thumbnails/"
+
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_RENDERER_CLASSES': [
@@ -164,6 +172,33 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+# drf-spectacular settings
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Imaginarium API',
+    'DESCRIPTION': 'API dla aplikacji Imaginarium - galeria zdjęć i filmów',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'COMPONENT_NO_READ_ONLY_REQUIRED': True,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'AUTHENTICATION_WHITELIST': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'SERVERS': [
+        {
+            'url': 'http://localhost:4444',
+            'description': 'Development server',
+        },
+    ],
+    'TAGS': [
+        {'name': 'accounts', 'description': 'Zarządzanie kontami użytkowników'},
+        {'name': 'albums', 'description': 'Zarządzanie albumami'},
+        {'name': 'media', 'description': 'Zarządzanie mediami (zdjęcia i filmy)'},
+        {'name': 'groups', 'description': 'Zarządzanie grupami'},
+        {'name': 'shares', 'description': 'Udostępnianie treści'},
     ],
 }
 
@@ -183,6 +218,8 @@ CELERY_RESULT_EXTENDED = True
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_TASK_DEFAULT_QUEUE = 'imaginarium'
+
+AI_SERVICE_URL = ENV_AI_SERVICE_URL
 
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
