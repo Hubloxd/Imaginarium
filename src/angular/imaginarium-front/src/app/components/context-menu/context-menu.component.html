@@ -1,0 +1,23 @@
+@if (visible) {
+  <div 
+    class="context-menu fixed bg-gray-900 border border-gray-700 rounded-lg shadow-lg py-2 z-50 min-w-[200px]"
+    [style.left.px]="x"
+    [style.top.px]="y"
+    (click)="$event.stopPropagation()"
+  >
+    @for (item of items; track item.label) {
+      <button
+        (click)="handleItemClick(item)"
+        [disabled]="item.disabled"
+        class="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+      >
+        @if (item.icon) {
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="item.icon"></path>
+          </svg>
+        }
+        <span>{{ item.label }}</span>
+      </button>
+    }
+  </div>
+}
