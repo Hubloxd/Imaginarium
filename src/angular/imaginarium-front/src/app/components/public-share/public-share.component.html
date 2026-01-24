@@ -1,0 +1,172 @@
+<div class="min-h-screen bg-gray-950 text-gray-100">
+  <!-- Header -->
+  <header class="bg-gray-900 border-b border-gray-800 px-6 py-4">
+    <div class="flex items-center justify-between">
+      <h1 class="text-xl font-semibold text-white">Udostępniona treść</h1>
+      <a
+        href="/login"
+        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors inline-block"
+      >
+        Zaloguj się
+      </a>
+    </div>
+  </header>
+
+  <!-- Loading -->
+  @if (isLoading()) {
+    <div class="flex items-center justify-center min-h-[60vh]">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+        <p class="text-gray-400">Ładowanie udostępnionej treści...</p>
+      </div>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error() && !isLoading()) {
+    <div class="flex items-center justify-center min-h-[60vh]">
+      <div class="text-center max-w-md">
+        <div class="text-red-400 text-6xl mb-4">⚠</div>
+        <h2 class="text-2xl font-semibold text-white mb-2">Błąd</h2>
+        <p class="text-gray-400 mb-6">{{ error() }}</p>
+        <a
+          href="/login"
+          class="inline-block px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+        >
+          Przejdź do logowania
+        </a>
+      </div>
+    </div>
+  }
+
+  <!-- Album content -->
+  @if (album() && !isLoading() && !error()) {
+    <div class="container mx-auto px-6 py-8">
+      <div class="mb-6">
+        <h2 class="text-3xl font-bold text-white mb-2">{{ album()!.name }}</h2>
+        @if (album()!.description) {
+          <p class="text-gray-400">{{ album()!.description }}</p>
+        }
+        <p class="text-sm text-gray-500 mt-2">
+          {{ album()!.mediaCount }} {{ album()!.mediaCount === 1 ? 'zdjęcie' : album()!.mediaCount < 5 ? 'zdjęcia' : 'zdjęć' }}
+        </p>
+      </div>
+
+      @if (album()!.media && album()!.media.length > 0) {
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          @for (media of album()!.media; track media.id) {
+            <div
+              class="relative aspect-square bg-gray-800 rounded-lg overflow-hidden cursor-pointer group"
+              (click)="openMediaViewer(media, album()!.media)"
+            >
+              @if (media.thumbnailUrl) {
+                <img
+                  [src]="media.thumbnailUrl"
+                  [alt]="media.fileName"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                />
+              } @else {
+                <div class="w-full h-full flex items-center justify-center bg-gray-800">
+                  <svg class="w-12 h-12 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+              }
+              
+              <!-- Overlay on hover -->
+              <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity flex items-center justify-center">
+                <p class="text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity px-2 text-center truncate w-full">
+                  {{ media.fileName }}
+                </p>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="text-center py-12">
+          <p class="text-gray-400">Album jest pusty</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Single media content -->
+  @if (media() && !isLoading() && !error()) {
+    <div class="container mx-auto px-6 py-8">
+      <div class="max-w-4xl mx-auto">
+        <div class="bg-gray-900 rounded-lg overflow-hidden">
+          @if (media()!.thumbnailUrl) {
+            <div class="aspect-video bg-gray-800 flex items-center justify-center">
+              <img
+                [src]="media()!.thumbnailUrl"
+                [alt]="media()!.fileName"
+                class="max-w-full max-h-full object-contain cursor-pointer"
+                (click)="openMediaViewer(media()!, [media()!])"
+              />
+            </div>
+          }
+          
+          <div class="p-6">
+            <h2 class="text-2xl font-semibold text-white mb-4">{{ media()!.fileName }}</h2>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span class="text-gray-400">Typ:</span>
+                <span class="text-white ml-2">{{ media()!.mediaType }}</span>
+              </div>
+              <div>
+                <span class="text-gray-400">Rozmiar:</span>
+                <span class="text-white ml-2">{{ (media()!.fileSize / 1024 / 1024).toFixed(2) }} MB</span>
+              </div>
+              <div>
+                <span class="text-gray-400">Data:</span>
+                <span class="text-white ml-2">{{ formatDate(media()!.uploadedAt) }}</span>
+              </div>
+              @if (media()!.width && media()!.height) {
+                <div>
+                  <span class="text-gray-400">Wymiary:</span>
+                  <span class="text-white ml-2">{{ media()!.width }} × {{ media()!.height }}</span>
+                </div>
+              }
+            </div>
+
+            @if (getMediaTags().length > 0) {
+              <div class="mt-6">
+                <h3 class="text-lg font-semibold text-white mb-3">Klasyfikacje AI</h3>
+                <div class="flex flex-wrap gap-2">
+                  @for (tag of getMediaTags(); track tag.name) {
+                    <div class="px-3 py-1 bg-blue-900/50 border border-blue-700 rounded-lg">
+                      <span class="text-blue-300 text-sm">{{ tag.name }}</span>
+                      <span class="text-blue-400 text-xs ml-2">({{ (tag.confidence * 100).toFixed(0) }}%)</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <div class="mt-6">
+              <a
+                [href]="media()!.mediaUrl"
+                [download]="media()!.fileName"
+                class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Pobierz
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Media Viewer -->
+  @if (showViewer()) {
+    <app-media-viewer
+      [media]="viewerMedia()"
+      [currentIndex]="viewerIndex()"
+      (close)="closeViewer()"
+    ></app-media-viewer>
+  }
+</div>
