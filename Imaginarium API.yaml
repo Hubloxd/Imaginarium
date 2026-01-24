@@ -1,0 +1,1015 @@
+openapi: 3.0.3
+info:
+  title: Imaginarium API
+  version: 1.0.0
+  description: API dla aplikacji Imaginarium - galeria zdjęć i filmów
+paths:
+  /api/accounts/change-password:
+    put:
+      operationId: accounts_change_password_update
+      description: |-
+        Endpoint do zmiany hasła użytkownika.
+        PUT /api/accounts/change-password/
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: accounts_change_password_partial_update
+      description: |-
+        Endpoint do zmiany hasła użytkownika.
+        PUT /api/accounts/change-password/
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedChangePasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedChangePasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedChangePasswordRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/login:
+    post:
+      operationId: accounts_login_create
+      description: |-
+        Endpoint do logowania użytkowników.
+        POST /api/accounts/login/
+        CSRF jest wyłączony przez middleware dla wszystkich /api/ endpointów.
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/logout:
+    post:
+      operationId: accounts_logout_create
+      description: |-
+        Endpoint do wylogowania użytkownika.
+        POST /api/accounts/logout/
+        Opcjonalnie można przesłać refresh token w body: {"refresh": "..."}
+        Uwaga: Bez blacklist tokeny pozostaną ważne do wygaśnięcia.
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/profile:
+    get:
+      operationId: accounts_profile_retrieve
+      description: |-
+        Endpoint do pobierania i aktualizacji profilu użytkownika.
+        GET /api/accounts/profile/ - pobierz profil
+        PUT /api/accounts/profile/ - zaktualizuj profil
+        PATCH /api/accounts/profile/ - częściowa aktualizacja profilu
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: accounts_profile_update
+      description: |-
+        Endpoint do pobierania i aktualizacji profilu użytkownika.
+        GET /api/accounts/profile/ - pobierz profil
+        PUT /api/accounts/profile/ - zaktualizuj profil
+        PATCH /api/accounts/profile/ - częściowa aktualizacja profilu
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdate'
+          description: ''
+    patch:
+      operationId: accounts_profile_partial_update
+      description: |-
+        Endpoint do pobierania i aktualizacji profilu użytkownika.
+        GET /api/accounts/profile/ - pobierz profil
+        PUT /api/accounts/profile/ - zaktualizuj profil
+        PATCH /api/accounts/profile/ - częściowa aktualizacja profilu
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdate'
+          description: ''
+  /api/accounts/register:
+    post:
+      operationId: accounts_register_create
+      description: |-
+        Endpoint do rejestracji nowych użytkowników.
+        POST /api/accounts/register/
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegistration'
+          description: ''
+  /api/accounts/token/refresh:
+    post:
+      operationId: accounts_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/accounts/token/verify:
+    post:
+      operationId: accounts_token_verify_create
+      description: |-
+        Takes a token and indicates if it is valid.  This view provides no
+        information about a token's fitness for a particular use.
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequest'
+        required: true
+      responses:
+        '200':
+          description: No response body
+  /api/albums:
+    get:
+      operationId: albums_retrieve
+      tags:
+      - albums
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: albums_create
+      tags:
+      - albums
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/albums/{album_id}:
+    get:
+      operationId: albums_retrieve_2
+      parameters:
+      - in: path
+        name: album_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - albums
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: albums_destroy
+      parameters:
+      - in: path
+        name: album_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - albums
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/albums/{album_id}/media:
+    post:
+      operationId: albums_media_create
+      parameters:
+      - in: path
+        name: album_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - albums
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/albums/{album_id}/media/{media_id}:
+    post:
+      operationId: albums_media_create_2
+      parameters:
+      - in: path
+        name: album_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: media_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - albums
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: albums_media_destroy
+      parameters:
+      - in: path
+        name: album_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: media_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - albums
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/groups:
+    get:
+      operationId: groups_retrieve
+      tags:
+      - groups
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: groups_create
+      tags:
+      - groups
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/groups/{group_id}:
+    get:
+      operationId: groups_retrieve_2
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - groups
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: groups_destroy
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - groups
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/groups/{group_id}/accept:
+    post:
+      operationId: groups_accept_create
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - groups
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/groups/{group_id}/invite:
+    post:
+      operationId: groups_invite_create
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - groups
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/groups/{group_id}/leave:
+    post:
+      operationId: groups_leave_create
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - groups
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/groups/{group_id}/members:
+    get:
+      operationId: groups_members_retrieve
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - groups
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/groups/{group_id}/members/{member_id}:
+    delete:
+      operationId: groups_members_destroy
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - groups
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/groups/{group_id}/members/{member_id}/role:
+    put:
+      operationId: groups_members_role_update
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - groups
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/groups/{group_id}/reject:
+    post:
+      operationId: groups_reject_create
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - groups
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/groups/invitations:
+    get:
+      operationId: groups_invitations_retrieve
+      tags:
+      - groups
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/media:
+    get:
+      operationId: media_retrieve
+      tags:
+      - media
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: media_create
+      tags:
+      - media
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/media/{media_id}:
+    get:
+      operationId: media_retrieve_2
+      parameters:
+      - in: path
+        name: media_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - media
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: media_update
+      parameters:
+      - in: path
+        name: media_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - media
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: media_destroy
+      parameters:
+      - in: path
+        name: media_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - media
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/media/search:
+    get:
+      operationId: media_search_retrieve
+      tags:
+      - media
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/shares:
+    post:
+      operationId: shares_create
+      tags:
+      - shares
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/shares/{share_id}:
+    delete:
+      operationId: shares_destroy
+      parameters:
+      - in: path
+        name: share_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - shares
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/shares/by-me:
+    get:
+      operationId: shares_by_me_retrieve
+      tags:
+      - shares
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/shares/for-me:
+    get:
+      operationId: shares_for_me_retrieve
+      tags:
+      - shares
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/shares/group:
+    post:
+      operationId: shares_group_create
+      tags:
+      - shares
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/shares/group/{group_id}:
+    get:
+      operationId: shares_group_retrieve
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - shares
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/shares/token/{token}:
+    get:
+      operationId: shares_token_retrieve
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - shares
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/shares/token/{token}/content:
+    get:
+      operationId: shares_token_content_retrieve
+      description: |-
+        Publiczny endpoint do pobierania treści (media/album) przez token.
+        Dostępny bez autentykacji dla publicznych udostępnień.
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - shares
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/shares/validate/{token}:
+    get:
+      operationId: shares_validate_retrieve
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - shares
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    ChangePasswordRequest:
+      type: object
+      description: Serializer do zmiany hasła
+      properties:
+        old_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - new_password
+      - new_password_confirm
+      - old_password
+    PatchedChangePasswordRequest:
+      type: object
+      description: Serializer do zmiany hasła
+      properties:
+        old_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+    PatchedUserUpdateRequest:
+      type: object
+      description: Serializer do aktualizacji danych użytkownika
+      properties:
+        first_name:
+          type: string
+          title: Imię
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nazwisko
+          maxLength: 150
+        avatar:
+          type: string
+          format: binary
+          nullable: true
+          description: Zdjęcie profilowe użytkownika
+        bio:
+          type: string
+          title: Biografia
+          description: Krótki opis użytkownika
+          maxLength: 500
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    TokenVerifyRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - token
+    User:
+      type: object
+      description: Serializer do wyświetlania danych użytkownika
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          description: Adres email użytkownika (wymagany)
+          maxLength: 254
+        username:
+          type: string
+          title: Nazwa użytkownika
+          description: Wymagana. 150 lub mniej znaków. Jedynie litery, cyfry i @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          title: Imię
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nazwisko
+          maxLength: 150
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+          description: Zdjęcie profilowe użytkownika
+        bio:
+          type: string
+          title: Biografia
+          description: Krótki opis użytkownika
+          maxLength: 500
+        is_email_verified:
+          type: boolean
+          readOnly: true
+          title: Email zweryfikowany
+          description: Czy adres email został zweryfikowany
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Data utworzenia
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Data aktualizacji
+      required:
+      - email
+      - username
+    UserRegistration:
+      type: object
+      description: Serializer do rejestracji nowych użytkowników
+      properties:
+        email:
+          type: string
+          format: email
+          description: Adres email użytkownika (wymagany)
+          maxLength: 254
+        username:
+          type: string
+          title: Nazwa użytkownika
+          description: Wymagana. 150 lub mniej znaków. Jedynie litery, cyfry i @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          title: Imię
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nazwisko
+          maxLength: 150
+      required:
+      - email
+      - username
+    UserRegistrationRequest:
+      type: object
+      description: Serializer do rejestracji nowych użytkowników
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          description: Adres email użytkownika (wymagany)
+          maxLength: 254
+        username:
+          type: string
+          minLength: 1
+          title: Nazwa użytkownika
+          description: Wymagana. 150 lub mniej znaków. Jedynie litery, cyfry i @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        first_name:
+          type: string
+          title: Imię
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nazwisko
+          maxLength: 150
+      required:
+      - email
+      - password
+      - username
+    UserUpdate:
+      type: object
+      description: Serializer do aktualizacji danych użytkownika
+      properties:
+        first_name:
+          type: string
+          title: Imię
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nazwisko
+          maxLength: 150
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+          description: Zdjęcie profilowe użytkownika
+        bio:
+          type: string
+          title: Biografia
+          description: Krótki opis użytkownika
+          maxLength: 500
+    UserUpdateRequest:
+      type: object
+      description: Serializer do aktualizacji danych użytkownika
+      properties:
+        first_name:
+          type: string
+          title: Imię
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nazwisko
+          maxLength: 150
+        avatar:
+          type: string
+          format: binary
+          nullable: true
+          description: Zdjęcie profilowe użytkownika
+        bio:
+          type: string
+          title: Biografia
+          description: Krótki opis użytkownika
+          maxLength: 500
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+servers:
+- url: http://localhost:4444
+  description: Development server
+tags:
+- name: accounts
+  description: Zarządzanie kontami użytkowników
+- name: albums
+  description: Zarządzanie albumami
+- name: media
+  description: Zarządzanie mediami (zdjęcia i filmy)
+- name: groups
+  description: Zarządzanie grupami
+- name: shares
+  description: Udostępnianie treści
