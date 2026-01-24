@@ -33,6 +33,10 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'share/:token',
+    loadComponent: () => import('./components/public-share/public-share.component').then(m => m.PublicShareComponent)
+  },
+  {
     path: '**',
     redirectTo: '/login'
   }
