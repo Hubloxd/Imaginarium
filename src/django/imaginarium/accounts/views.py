@@ -30,12 +30,16 @@ class UserRegistrationView(generics.CreateAPIView):
         # Tworzenie tokenów JWT dla nowego użytkownika
         refresh = RefreshToken.for_user(user)
         
-        return Response({
-            'user': UserSerializer(user).data,
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
-            'message': 'Rejestracja zakończona sukcesem.'
-        }, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                'id': str(user.pk),
+                'email': user.email,
+                'username': user.username,
+                'accessToken': str(refresh.access_token),
+                'message': 'Rejestracja zakończona sukcesem.',
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 @api_view(['POST'])
@@ -44,23 +48,28 @@ def login_view(request):
     """
     Endpoint do logowania użytkowników.
     POST /api/accounts/login/
+    CSRF jest wyłączony przez middleware dla wszystkich /api/ endpointów.
     """
     serializer = LoginSerializer(data=request.data, context={'request': request})
     serializer.is_valid(raise_exception=True)
     user = serializer.validated_data['user']
     
-    # Logowanie użytkownika
-    login(request, user)
+    # Logowanie użytkownika (opcjonalne, dla sesji)
+    # login(request, user)
     
     # Tworzenie tokenów JWT
     refresh = RefreshToken.for_user(user)
     
-    return Response({
-        'user': UserSerializer(user).data,
-        'access': str(refresh.access_token),
-        'refresh': str(refresh),
-        'message': 'Logowanie zakończone sukcesem.'
-    }, status=status.HTTP_200_OK)
+    return Response(
+        {
+            'id': str(user.pk),
+            'email': user.email,
+            'username': user.username,
+            'accessToken': str(refresh.access_token),
+            'message': 'Logowanie zakończone sukcesem.',
+        },
+        status=status.HTTP_200_OK,
+    )
 
 
 @api_view(['POST'])

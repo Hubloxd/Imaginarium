@@ -12,32 +12,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         validators=[validate_password],
         style={'input_type': 'password'}
     )
-    password_confirm = serializers.CharField(
-        write_only=True,
-        required=True,
-        style={'input_type': 'password'}
-    )
 
     class Meta:
         model = User
-        fields = ['email', 'username', 'password', 'password_confirm', 
-                  'first_name', 'last_name']
+        fields = ['email', 'username', 'password', 'first_name', 'last_name']
         extra_kwargs = {
             'email': {'required': True},
             'username': {'required': True},
         }
 
-    def validate(self, attrs):
-        """Walidacja zgodności haseł"""
-        if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError({
-                'password_confirm': 'Hasła nie są identyczne.'
-            })
-        return attrs
-
     def create(self, validated_data):
         """Tworzenie nowego użytkownika"""
-        validated_data.pop('password_confirm')
         password = validated_data.pop('password')
         user = User.objects.create_user(**validated_data)
         user.set_password(password)
