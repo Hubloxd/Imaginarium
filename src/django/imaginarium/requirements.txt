@@ -14,3 +14,4 @@ gunicorn[standard]
 drf-spectacular
 django-extensions
 django_celery_results
+requests
