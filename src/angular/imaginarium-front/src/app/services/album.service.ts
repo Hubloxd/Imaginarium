@@ -12,6 +12,7 @@ export interface Album {
   coverMediaId?: string;
   coverThumbnailUrl?: string;
   mediaCount: number;
+  userId?: string;
 }
 
 export interface Tag {
