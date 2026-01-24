@@ -1,7 +1,7 @@
 import { Component, signal, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ShareService, CreateShareDto, Permission } from '../../services/share.service';
+import { ShareService, CreateShareDto, Permission, Share } from '../../services/share.service';
 import { GroupService, Group } from '../../services/group.service';
 
 @Component({
@@ -28,6 +28,9 @@ export class ShareModalComponent implements OnInit, OnChanges {
   groups = signal<Group[]>([]);
   isLoadingGroups = signal<boolean>(false);
   isSharing = signal<boolean>(false);
+  createdShare = signal<Share | null>(null);
+  publicLink = signal<string>('');
+  linkCopied = signal<boolean>(false);
 
   Permission = Permission;
 
@@ -70,6 +73,9 @@ export class ShareModalComponent implements OnInit, OnChanges {
     this.permissionLevel.set(Permission.View);
     this.isPublic.set(false);
     this.expiresAt.set('');
+    this.createdShare.set(null);
+    this.publicLink.set('');
+    this.linkCopied.set(false);
   }
 
   closeModal(): void {
@@ -78,14 +84,17 @@ export class ShareModalComponent implements OnInit, OnChanges {
   }
 
   share(): void {
-    if (this.shareType() === 'user' && !this.selectedUserEmail().trim()) {
-      alert('Podaj email użytkownika');
-      return;
-    }
+    // Jeśli publiczne, nie wymagaj użytkownika/grupy
+    if (!this.isPublic()) {
+      if (this.shareType() === 'user' && !this.selectedUserEmail().trim()) {
+        alert('Podaj email użytkownika');
+        return;
+      }
 
-    if (this.shareType() === 'group' && !this.selectedGroupId()) {
-      alert('Wybierz grupę');
-      return;
+      if (this.shareType() === 'group' && !this.selectedGroupId()) {
+        alert('Wybierz grupę');
+        return;
+      }
     }
 
     this.isSharing.set(true);
@@ -101,9 +110,18 @@ export class ShareModalComponent implements OnInit, OnChanges {
     };
 
     this.shareService.createShare(dto).subscribe({
-      next: () => {
-        this.closeModal();
-        this.shared.emit();
+      next: (share) => {
+        this.createdShare.set(share);
+        // Jeśli to publiczne udostępnienie, wygeneruj link
+        if (share.isPublic && share.shareToken) {
+          const baseUrl = window.location.origin;
+          this.publicLink.set(`${baseUrl}/share/${share.shareToken}`);
+        } else {
+          // Jeśli nie publiczne, zamknij modal
+          this.closeModal();
+          this.shared.emit();
+        }
+        this.isSharing.set(false);
       },
       error: (error) => {
         console.error('Błąd podczas udostępniania:', error);
@@ -124,5 +142,25 @@ export class ShareModalComponent implements OnInit, OnChanges {
       default:
         return '';
     }
+  }
+
+  copyLink(): void {
+    const link = this.publicLink();
+    if (link) {
+      navigator.clipboard.writeText(link).then(() => {
+        this.linkCopied.set(true);
+        setTimeout(() => {
+          this.linkCopied.set(false);
+        }, 2000);
+      }).catch(err => {
+        console.error('Błąd podczas kopiowania linku:', err);
+        alert('Nie udało się skopiować linku');
+      });
+    }
+  }
+
+  closeAfterShare(): void {
+    this.closeModal();
+    this.shared.emit();
   }
 }

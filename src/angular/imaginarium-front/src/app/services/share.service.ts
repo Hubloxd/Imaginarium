@@ -76,4 +76,8 @@ export class ShareService {
   getSharesByMe(): Observable<Share[]> {
     return this.http.get<Share[]>(`${this.apiUrl}/by-me`);
   }
+
+  getShareContentByToken(token: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/token/${token}/content`);
+  }
 }
